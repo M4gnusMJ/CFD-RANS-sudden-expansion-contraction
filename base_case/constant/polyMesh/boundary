@@ -1,7 +1,7 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
+|  \\    /   O peration     | Version:  2412                                  |
 |   \\  /    A nd           | Website:  www.openfoam.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
@@ -9,47 +9,55 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volScalarField;
-    object      k;
+    arch        "LSB;label=32;scalar=64";
+    class       polyBoundaryMesh;
+    location    "constant/polyMesh";
+    object      boundary;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 2 -2 0 0 0 0];
-
-internalField   uniform 0.375;
-
-boundaryField
-{
-    inlet               # TODO change
+6
+(
+    inlet
     {
-        type            fixedValue;
-        value           uniform 0.375;
+        type            patch;
+        nFaces          5;
+        startFace       175;
     }
-
     outlet
     {
-        type            zeroGradient;
+        type            patch;
+        nFaces          5;
+        startFace       180;
     }
-
-    upperWall
+    top
     {
-        type            kqRWallFunction;
-        value           uniform 0.375;
+        type            wall;
+        inGroups        1(wall);
+        nFaces          25;
+        startFace       185;
+    }
+    back
+    {
+        type            wedge;
+        inGroups        1(wedge);
+        nFaces          100;
+        startFace       210;
     }
     front
     {
         type            wedge;
-    }
-
-    back
-    {
-        type            wedge;
+        inGroups        1(wedge);
+        nFaces          100;
+        startFace       310;
     }
     axis
     {
         type            empty;
+        inGroups        1(empty);
+        nFaces          0;
+        startFace       410;
     }
-}
-
+)
 
 // ************************************************************************* //

@@ -36,16 +36,21 @@ boundaryField
         type            zeroGradient;
     }
 
-    lowerWall
+  front
     {
-        type            zeroGradient;
+        type            wedge;
     }
 
-    frontAndBack
+    back
+    {
+        type            wedge;
+    }
+    axis
     {
         type            empty;
     }
 }
+
 
 
 // ************************************************************************* //

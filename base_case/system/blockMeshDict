@@ -74,7 +74,7 @@ boundary
 			 (9 11 10 9)
 		 );
 	}
-	 top
+	upperWall
 	{
 		 type wall;
 		 faces

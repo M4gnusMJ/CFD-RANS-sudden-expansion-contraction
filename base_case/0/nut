@@ -38,17 +38,19 @@ boundaryField
         value           uniform 0;
     }
 
-    lowerWall
+  front
     {
-        type            nutkWallFunction;
-        value           uniform 0;
+        type            wedge;
     }
 
-    frontAndBack
+    back
+    {
+        type            wedge;
+    }
+    axis
     {
         type            empty;
     }
 }
-
 
 // ************************************************************************* //

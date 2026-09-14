@@ -20,10 +20,10 @@ internalField   uniform (0 0 0);
 
 boundaryField
 {
-    inlet
+    inlet   // TODO change
     {
         type            fixedValue;
-        value           uniform (10 0 0);
+        value           uniform (1 0 0);
     }
 
     outlet
@@ -36,12 +36,16 @@ boundaryField
         type            noSlip;
     }
 
-    lowerWall
+    front
     {
-        type            noSlip;
+        type            wedge;
     }
 
-    frontAndBack
+    back
+    {
+        type            wedge;
+    }
+    axis
     {
         type            empty;
     }

@@ -20,7 +20,7 @@ internalField   uniform 14.855;
 
 boundaryField
 {
-    inlet
+    inlet               # TODO change
     {
         type            fixedValue;
         value           uniform 14.855;
@@ -37,13 +37,16 @@ boundaryField
         value           uniform 14.855;
     }
 
-    lowerWall
+    front
     {
-        type            epsilonWallFunction;
-        value           uniform 14.855;
+        type            wedge;
     }
 
-    frontAndBack
+    back
+    {
+        type            wedge;
+    }
+    axis
     {
         type            empty;
     }
