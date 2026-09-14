@@ -30,7 +30,7 @@ FoamFile
         nFaces          5;
         startFace       180;
     }
-    top
+    upperWall
     {
         type            wall;
         inGroups        1(wall);
