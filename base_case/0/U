@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | OpenFOAM                                        |
+|  \\    /   O peration     | Group 22 - Assignment 3                         |
+|   \\  /    A nd           |                                                 |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -14,16 +14,22 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+// Values come from case_design/case_design.py via the generated include file.
+// Change a primary choice at the top of that script, re-run it, and this file
+// follows automatically - do not hard-code numbers here.
+#include "include/initialConditions"
+
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (0 0 0);
+internalField   uniform $Uinlet;
 
 boundaryField
 {
-    inlet   // TODO change
+    // Flat profile; the 30 d1 inlet section lets it develop before the step.
+    inlet
     {
         type            fixedValue;
-        value           uniform (1 0 0);
+        value           uniform $Uinlet;
     }
 
     outlet
@@ -45,11 +51,11 @@ boundaryField
     {
         type            wedge;
     }
+
     axis
     {
         type            empty;
     }
 }
-
 
 // ************************************************************************* //

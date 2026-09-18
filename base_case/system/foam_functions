@@ -1,0 +1,159 @@
+// -*- C++ -*-
+// Group 22 - Assignment 3 - function objects for the required plots.
+// Included from controlDict:  functions { #include "foam_functions" }
+//
+// Only // comments in this file. A C-style comment block is unsafe here
+// because a glob pattern contains the sequence that ends the comment, which
+// silently exposes the rest of the header to the dictionary parser.
+
+// ---- 1. pressure along the symmetry axis, final state ----------------------
+// Writes postProcessing/axisLine/<endTime>/line_epsilon_k_p_U.csv
+// OpenFOAM puts every sampled field in the file name, sorted alphabetically,
+// so do not hard-code the name - glob it and read the column by header.
+axisLine
+{
+    type            sets;
+    libs            ("libsampling.so");
+    writeControl    onEnd;
+    interpolationScheme cellPoint;
+    setFormat       csv;
+    fields          (p U k epsilon);
+
+    sets
+    (
+        line
+        {
+            type    uniform;
+            axis    x;
+            // just off the axis: exactly on it the wedge is degenerate
+            start   (0.0    0.0002 0);
+            end     (12.0   0.0002 0);
+            nPoints 1200;
+        }
+    );
+}
+
+// ---- 2. the same line every 500 iterations ---------------------------------
+// Convergence evidence: shows the monitored pressure drops stop changing.
+// Needed because the p residual plateaus while the solution is already settled.
+axisHistory
+{
+    type            sets;
+    libs            ("libsampling.so");
+    writeControl    timeStep;
+    writeInterval   500;
+    interpolationScheme cellPoint;
+    setFormat       csv;
+    fields          (p);
+
+    sets
+    (
+        line
+        {
+            type    uniform;
+            axis    x;
+            start   (0.0    0.0002 0);
+            end     (12.0   0.0002 0);
+            nPoints 1200;
+        }
+    );
+}
+
+// ---- 3. y+ summary (min / max / average per patch) -------------------------
+yPlusWall
+{
+    type            yPlus;
+    libs            ("libfieldFunctionObjects.so");
+    writeControl    onEnd;
+    writeFields     yes;      // also writes a yPlus field for step 4
+}
+
+// ---- 4. y+ along the wall, as face values with coordinates -----------------
+// A previous version sampled the yPlus field with a patchSeed set and
+// cellPoint interpolation. That gave piecewise-constant nonsense, because
+// yPlus lives on wall FACES and the interpolation pulled in interior zeros.
+// Sampling the patch surface directly gives one value per wall face.
+// Writes postProcessing/yPlusSurface/<time>/yPlus_wall.raw : x y z yPlus
+yPlusSurface
+{
+    type            surfaces;
+    libs            ("libsampling.so");
+    writeControl    onEnd;
+    surfaceFormat   raw;
+    fields          (yPlus);
+    interpolate     false;
+
+    surfaces
+    (
+        wall
+        {
+            type        patch;
+            patches     (upperWall);
+        }
+    );
+}
+
+// ---- 5. wall-normal profiles for the law of the wall -----------------------
+// Plot u+ vs y+ from these and compare with u+ = y+ in the viscous sublayer
+// and u+ = ln(y+)/0.41 + 5.0 in the log layer.
+wallProfiles
+{
+    type            sets;
+    libs            ("libsampling.so");
+    writeControl    onEnd;
+    interpolationScheme cellPoint;
+    setFormat       csv;
+    fields          (U p k epsilon nut);
+
+    sets
+    (
+        // large pipe, 25 d2 after the expansion
+        afterExpansion
+        {
+            type    uniform;
+            axis    y;
+            start   (8.0 0.0002 0);
+            end     (8.0 0.0999 0);
+            nPoints 300;
+        }
+        // small pipe, 25 d1 after the contraction
+        afterContraction
+        {
+            type    uniform;
+            axis    y;
+            start   (11.5 0.0002 0);
+            end     (11.5 0.04997 0);
+            nPoints 300;
+        }
+        // end of the inlet section - must already be fully developed
+        inletDeveloped
+        {
+            type    uniform;
+            axis    y;
+            start   (2.7 0.0002 0);
+            end     (2.7 0.04997 0);
+            nPoints 300;
+        }
+    );
+}
+
+// ---- 6. wall shear stress -> friction factor -------------------------------
+wallShear
+{
+    type            wallShearStress;
+    libs            ("libfieldFunctionObjects.so");
+    writeControl    onEnd;
+    patches         (upperWall);
+}
+
+// ---- 7. residuals, so the convergence claim has evidence -------------------
+residuals
+{
+    type            solverInfo;
+    libs            ("libutilityFunctionObjects.so");
+    writeControl    timeStep;
+    writeInterval   1;
+    fields          (p U k epsilon);
+}
+
+// ************************************************************************* //

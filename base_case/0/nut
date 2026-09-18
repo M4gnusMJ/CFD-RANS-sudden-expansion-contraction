@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | OpenFOAM                                        |
+|  \\    /   O peration     | Group 22 - Assignment 3                         |
+|   \\  /    A nd           |                                                 |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -32,13 +32,16 @@ boundaryField
         value           uniform 0;
     }
 
+    // nutkWallFunction assumes the first cell sits in the log layer. With the
+    // boundary layer resolved it must be nutLowReWallFunction, which gives
+    // nut = 0 at the wall.
     upperWall
     {
-        type            nutkWallFunction;
+        type            nutLowReWallFunction;
         value           uniform 0;
     }
 
-  front
+    front
     {
         type            wedge;
     }
@@ -47,6 +50,7 @@ boundaryField
     {
         type            wedge;
     }
+
     axis
     {
         type            empty;
