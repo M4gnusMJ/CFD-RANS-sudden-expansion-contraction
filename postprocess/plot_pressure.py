@@ -21,15 +21,30 @@ Usage:  python3 plot_pressure.py
 """
 
 import csv
+import json
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
 
-# --- geometry / flow, must match case_design.py -----------------------------
-X_EXP, X_CON, L_TOT = 3.0, 9.0, 12.0
-D1, D2 = 0.10, 0.20
+# --- geometry / flow ---------------------------------------------------------
+# Read from case_design/case_params.json so there is ONE place to change a
+# parameter. The fallbacks below are only used if that file is missing; if you
+# see the warning, re-run case_design.py rather than editing numbers here.
+_DEFAULTS = {"x_exp": 3.0, "x_con": 9.0, "Ltot": 12.0, "d1": 0.10, "d2": 0.20,
+             "dp_exp": 0.75, "dp_con": -2.625, "f1": 0.02575, "U1": 2.0}
+_PARAMS_PATH = os.path.join(HERE, "..", "case_design", "case_params.json")
+try:
+    with open(_PARAMS_PATH) as _fh:
+        P = {**_DEFAULTS, **json.load(_fh)}
+    _PARAMS_OK = True
+except (OSError, ValueError):
+    P = dict(_DEFAULTS)
+    _PARAMS_OK = False
+
+X_EXP, X_CON, L_TOT = P["x_exp"], P["x_con"], P["Ltot"]
+D1, D2 = P["d1"], P["d2"]
 H_STEP = (D2 - D1) / 2.0
 LEVELS = ["coarse", "medium", "fine"]
 COLORS = {"coarse": "#d6604d", "medium": "#4393c3", "fine": "#2166ac"}
@@ -106,7 +121,7 @@ def extract_dp(axis):
     sec1 = window(axis, 0.35 * X_EXP, X_EXP - 6 * D1)
     if len(sec1) >= 5:
         a, _ = linfit(sec1)
-        res["f1_measured"] = -2.0 * D1 * a / (2.0 ** 2)
+        res["f1_measured"] = -2.0 * D1 * a / (P["U1"] ** 2)
     return res
 
 
@@ -125,6 +140,12 @@ def main():
 
     print("Group 22 - post-processing")
     print("=" * 52)
+    if _PARAMS_OK:
+        print(f"parameters: d1={D1} d2={D2} Re1={P.get('Re1')} "
+              f"steps at x={X_EXP} and x={X_CON}  (case_params.json)")
+    else:
+        print("WARNING: case_design/case_params.json not found - using fallback")
+        print("         geometry. Run case_design.py so these stay in sync.")
     if analytical:
         print(f"analytical curve: {len(analytical)} points loaded")
     else:
@@ -144,16 +165,16 @@ def main():
         print(f"\n{lv}:")
         if "expansion" in r:
             print(f"  dp/rho across expansion   = {r['expansion']:+.5f} m2/s2"
-                  f"   (analytical +0.75000)")
+                  f"   (analytical {P['dp_exp']:+.5f})")
         if "contraction" in r:
             print(f"  dp/rho across contraction = {r['contraction']:+.5f} m2/s2"
-                  f"   (analytical -2.62500)")
+                  f"   (analytical {P['dp_con']:+.5f})")
         for nm, w in r.get("windows", {}).items():
             print(f"  fit windows, {nm:<12} {w[0]:.2f}-{w[1]:.2f} m  and  "
                   f"{w[2]:.2f}-{w[3]:.2f} m")
         if "f1_measured" in r:
             print(f"  f1 from measured slope    = {r['f1_measured']:.5f}"
-                  f"        (Haaland 0.02575)")
+                  f"        (Haaland {P['f1']:.5f})")
         if d["yplus"]:
             ys = [p[1] for p in d["yplus"]]
             print(f"  y+ range                  = {min(ys):.3f} .. {max(ys):.3f}"
