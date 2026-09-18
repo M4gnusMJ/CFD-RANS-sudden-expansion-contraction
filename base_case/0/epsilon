@@ -14,19 +14,19 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-// epsilon = Cmu^0.75 k^1.5 / l  with l = 0.07 d1 = 0.007 m
-// -> epsilon = 0.09^0.75 * 0.012916^1.5 / 0.007 = 0.034458 m2/s3
+// epsilon = Cmu^0.75 k^1.5 / l with l = 0.07 d1, computed by case_design.py.
+#include "include/initialConditions"
 
 dimensions      [0 2 -3 0 0 0 0];
 
-internalField   uniform 0.034458;
+internalField   uniform $epsilonInlet;
 
 boundaryField
 {
     inlet
     {
         type            fixedValue;
-        value           uniform 0.034458;
+        value           uniform $epsilonInlet;
     }
 
     outlet
@@ -35,11 +35,10 @@ boundaryField
     }
 
     // LaunderSharmaKE solves for epsilonTilda, which is zero at the wall by
-    // construction. epsilonWallFunction imposes the log-layer value
-    // Cmu^0.75 k^1.5 / (kappa y) instead, which is meaningless at y+ = 1 and
-    // fights the low-Re model - that produced 3386 "bounding epsilon" messages
-    // and stalled the residuals. A tiny positive value instead of exactly zero
-    // keeps nut = Cmu fMu k^2 / epsilon finite.
+    // construction. epsilonWallFunction imposes the log-layer value instead,
+    // which is meaningless at y+ = 1 and fights the low-Re model - that gave
+    // 3386 "bounding epsilon" messages and stalled the residuals. A tiny
+    // positive value keeps nut = Cmu fMu k^2 / epsilon finite.
     upperWall
     {
         type            fixedValue;

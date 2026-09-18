@@ -14,18 +14,22 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+// Values come from case_design/case_design.py via the generated include file.
+// Change a primary choice at the top of that script, re-run it, and this file
+// follows automatically - do not hard-code numbers here.
+#include "include/initialConditions"
+
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (2 0 0);
+internalField   uniform $Uinlet;
 
 boundaryField
 {
-    // Flat profile. Re1 = U1 d1 / nu = 2.0 * 0.1 / 1e-5 = 20000.
-    // The 30 d1 inlet section lets it develop before the expansion.
+    // Flat profile; the 30 d1 inlet section lets it develop before the step.
     inlet
     {
         type            fixedValue;
-        value           uniform (2 0 0);
+        value           uniform $Uinlet;
     }
 
     outlet
