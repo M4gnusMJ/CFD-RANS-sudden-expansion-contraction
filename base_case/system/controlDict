@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | OpenFOAM                                        |
+|  \\    /   O peration     | Group 22 - Assignment 3                         |
+|   \\  /    A nd           |                                                 |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -17,37 +17,31 @@ FoamFile
 application     simpleFoam;
 
 startFrom       startTime;
-
 startTime       0;
 
 stopAt          endTime;
 
-endTime         2000;
-
+// Iteration cap only. residualControl in fvSolution stops the run earlier once
+// it is converged, so this just has to be comfortably larger than needed.
+endTime         10000;
 deltaT          1;
 
 writeControl    timeStep;
-
 writeInterval   2000;
-
-purgeWrite      0;
+purgeWrite      3;
 
 writeFormat     ascii;
-
-writePrecision  6;
-
+writePrecision  8;
 writeCompression off;
 
 timeFormat      general;
-
 timePrecision   6;
 
 runTimeModifiable true;
 
 functions
 {
-    #includeFunc streamlines
+    #include "foam_functions"
 }
-
 
 // ************************************************************************* //

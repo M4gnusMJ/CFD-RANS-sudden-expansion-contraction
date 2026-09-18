@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | OpenFOAM                                        |
+|  \\    /   O peration     | Group 22 - Assignment 3                         |
+|   \\  /    A nd           |                                                 |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -16,14 +16,16 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (0 0 0);
+internalField   uniform (2 0 0);
 
 boundaryField
 {
-    inlet   // TODO change
+    // Flat profile. Re1 = U1 d1 / nu = 2.0 * 0.1 / 1e-5 = 20000.
+    // The 30 d1 inlet section lets it develop before the expansion.
+    inlet
     {
         type            fixedValue;
-        value           uniform (1 0 0);
+        value           uniform (2 0 0);
     }
 
     outlet
@@ -45,11 +47,11 @@ boundaryField
     {
         type            wedge;
     }
+
     axis
     {
         type            empty;
     }
 }
-
 
 // ************************************************************************* //

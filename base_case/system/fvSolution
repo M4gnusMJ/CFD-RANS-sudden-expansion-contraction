@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | OpenFOAM                                        |
+|  \\    /   O peration     | Group 22 - Assignment 3                         |
+|   \\  /    A nd           |                                                 |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -16,20 +16,25 @@ FoamFile
 
 solvers
 {
+    // PCG/DIC instead of GAMG. checkMesh reports a max aspect ratio of ~800
+    // (long axial cells in the developed inlet section against 0.18 mm wall
+    // cells). GAMG's agglomeration degrades on cells that stretched, and it
+    // threw a floating point exception here. PCG is slower per iteration but
+    // does not build coarse levels, so it is not affected.
     p
     {
-        solver          GAMG;
-        tolerance       1e-06;
-        relTol          0.1;
-        smoother        GaussSeidel;
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-08;
+        relTol          0.01;
     }
 
     "(U|k|epsilon|omega|f|v2)"
     {
         solver          smoothSolver;
         smoother        symGaussSeidel;
-        tolerance       1e-05;
-        relTol          0.1;
+        tolerance       1e-08;
+        relTol          0.01;
     }
 }
 
@@ -38,22 +43,37 @@ SIMPLE
     nNonOrthogonalCorrectors 0;
     consistent      yes;
 
+    // Measured, not guessed. With SIMPLEC the pressure residual on this case
+    // settles at ~6e-4 and stays there for thousands of iterations while the
+    // velocity residual keeps falling to ~5e-6. Demanding p < 1e-4 therefore
+    // just runs to endTime without improving the solution. The criterion below
+    // stops the run where the velocity field is genuinely converged; the
+    // monitored pressure drops are then shown to be stationary as well
+    // (axisLine samples every 500 iterations - see system/foam_functions).
+    // Identical on all three meshes, which is what the GCI requires.
+    // NOTE on the U target: OpenFOAM takes the maximum over Ux, Uy and Uz.
+    // On an axisymmetric wedge the out-of-plane velocity Uz is zero by
+    // symmetry, so its residual is normalised by a vanishing quantity and
+    // plateaus around 1.4e-4 while Ux and Uy reach ~5e-6. 2e-4 is therefore
+    // the lowest value the wedge permits; the physically meaningful
+    // components are two orders of magnitude better than that.
     residualControl
     {
-        p               1e-2;
-        U               1e-3;
-        "(k|epsilon|omega|f|v2)" 1e-3;
+        p               1e-3;
+        U               2e-4;
+        "(k|epsilon|omega|f|v2)" 5e-5;
     }
 }
 
 relaxationFactors
 {
+    // Lowered from 0.9. Slower per iteration but far less likely to tip into
+    // the limit cycle the first attempt got stuck in.
     equations
     {
-        U               0.9; // 0.9 is more stable but 0.95 more convergent
-        ".*"            0.9; // 0.9 is more stable but 0.95 more convergent
+        U               0.7;
+        ".*"            0.7;
     }
 }
-
 
 // ************************************************************************* //

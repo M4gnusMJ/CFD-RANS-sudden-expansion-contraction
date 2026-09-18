@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | OpenFOAM                                        |
+|  \\    /   O peration     | Group 22 - Assignment 3                         |
+|   \\  /    A nd           |                                                 |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -14,16 +14,19 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+// k = 1.5 (U1 I)^2 with I = 0.16 Re1^(-1/8) = 4.64 %
+// -> k = 1.5 * (2.0 * 0.0464)^2 = 0.012916 m2/s2   (case_design/design_summary.txt)
+
 dimensions      [0 2 -2 0 0 0 0];
 
-internalField   uniform 0.375;
+internalField   uniform 0.012916;
 
 boundaryField
 {
-    inlet               // TODO change
+    inlet
     {
         type            fixedValue;
-        value           uniform 0.375;
+        value           uniform 0.012916;
     }
 
     outlet
@@ -31,11 +34,14 @@ boundaryField
         type            zeroGradient;
     }
 
+    // Low-Re: the boundary layer is resolved (y+ <= 1), so the high-Re
+    // kqRWallFunction is not valid here. kLowReWallFunction blends to k = 0.
     upperWall
     {
-        type            kqRWallFunction;
-        value           uniform 0.375;
+        type            kLowReWallFunction;
+        value           uniform 1e-10;
     }
+
     front
     {
         type            wedge;
@@ -45,11 +51,11 @@ boundaryField
     {
         type            wedge;
     }
+
     axis
     {
         type            empty;
     }
 }
-
 
 // ************************************************************************* //

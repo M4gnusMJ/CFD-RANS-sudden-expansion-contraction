@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  v2412                                 |
-|   \\  /    A nd           | Website:  www.openfoam.com                      |
+| \\      /  F ield         | OpenFOAM                                        |
+|  \\    /   O peration     | Group 22 - Assignment 3                         |
+|   \\  /    A nd           |                                                 |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -14,16 +14,19 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+// epsilon = Cmu^0.75 k^1.5 / l  with l = 0.07 d1 = 0.007 m
+// -> epsilon = 0.09^0.75 * 0.012916^1.5 / 0.007 = 0.034458 m2/s3
+
 dimensions      [0 2 -3 0 0 0 0];
 
-internalField   uniform 14.855;
+internalField   uniform 0.034458;
 
 boundaryField
 {
-    inlet               // TODO change
+    inlet
     {
         type            fixedValue;
-        value           uniform 14.855;
+        value           uniform 0.034458;
     }
 
     outlet
@@ -31,10 +34,16 @@ boundaryField
         type            zeroGradient;
     }
 
+    // LaunderSharmaKE solves for epsilonTilda, which is zero at the wall by
+    // construction. epsilonWallFunction imposes the log-layer value
+    // Cmu^0.75 k^1.5 / (kappa y) instead, which is meaningless at y+ = 1 and
+    // fights the low-Re model - that produced 3386 "bounding epsilon" messages
+    // and stalled the residuals. A tiny positive value instead of exactly zero
+    // keeps nut = Cmu fMu k^2 / epsilon finite.
     upperWall
     {
-        type            epsilonWallFunction;
-        value           uniform 14.855;
+        type            fixedValue;
+        value           uniform 1e-10;
     }
 
     front
@@ -46,11 +55,11 @@ boundaryField
     {
         type            wedge;
     }
+
     axis
     {
         type            empty;
     }
 }
-
 
 // ************************************************************************* //
