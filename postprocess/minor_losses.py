@@ -94,7 +94,8 @@ def plot_losses(runs, output):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=HERE / "data")
-    parser.add_argument("--output-dir", type=Path, default=HERE / "figs")
+    parser.add_argument("--output-dir", type=Path, default=HERE / "tables", help="Result table directory")
+    parser.add_argument("--figures-dir", type=Path, default=HERE / "figs", help="Plot directory")
     parser.add_argument("--no-plot", action="store_true", help="Only print and save the CSV table")
     args = parser.parse_args(argv)
     try:
@@ -126,7 +127,8 @@ def main(argv=None):
                   f"{row['K_sim']:14.6f} {row['K_analytical']:14.6f}")
         print(f"Saved {output}")
         if not args.no_plot:
-            figure = args.output_dir / "minor_losses.png"
+            args.figures_dir.mkdir(parents=True, exist_ok=True)
+            figure = args.figures_dir / "minor_losses.png"
             plot_losses(runs, figure)
             print(f"Saved {figure}")
     except (OSError, ValueError, KeyError, ImportError) as exc:

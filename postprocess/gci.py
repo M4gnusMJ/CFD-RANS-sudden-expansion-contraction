@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GCI of the inlet friction factor from generated postprocess/data CSVs.
+"""GCI of inlet friction and contraction loss factors from generated data CSVs.
 
 Run from any directory; optionally pass --data-dir for another CSV directory.
 Cell counts and geometry come from case_design/case_params.json.
@@ -14,6 +14,7 @@ import pandas as pd
 from scipy.optimize import root_scalar
 
 from plot_pressure import extract_dp, read_csv
+from minor_losses import calculate_losses
 
 
 HERE = Path(__file__).resolve().parent
@@ -21,7 +22,7 @@ LEVELS = ("coarse", "medium", "fine")
 
 
 def load_run_data(data_dir):
-    """Load measured friction factors and unweighted wall-sample y+ medians."""
+    """Load both indicators and wall-sample y+ medians from the same run CSVs."""
     params_path = HERE.parent / "case_design" / "case_params.json"
     with params_path.open() as stream:
         params = json.load(stream)
@@ -35,7 +36,7 @@ def load_run_data(data_dir):
     if not np.isfinite(domain_area) or domain_area <= 0:
         raise ValueError("The representative domain area must be positive and finite.")
 
-    phi, y_plus = [], []
+    friction, contraction, y_plus = [], [], []
     for level in LEVELS:
         samples = {}
         for quantity in ("axis", "yplus"):
@@ -47,9 +48,15 @@ def load_run_data(data_dir):
         measured = extract_dp(samples["axis"])
         if "f1_measured" not in measured:
             raise ValueError(f"{level}: insufficient pressure samples in the inlet fit window.")
-        phi.append(measured["f1_measured"])
+        friction.append(measured["f1_measured"])
+        losses, _ = calculate_losses(samples["axis"], level)
+        contraction.append(next(row["K_sim"] for row in losses if row["step"] == "contraction"))
         y_plus.append(np.median([value for _, value in samples["yplus"]]))
-    return cells, domain_area, np.array(phi), y_plus
+    indicators = {
+        "Inlet Darcy friction factor": np.array(friction),
+        "Contraction loss coefficient K": np.array(contraction),
+    }
+    return cells, domain_area, indicators, y_plus
 
 
 def epsilon_of_monitoring_variable(phi_1, phi_2, phi_3):
@@ -61,48 +68,25 @@ def q_p(r_21, r_32, s, p):
 
 
 def apparent_order_root_eq(p, r_21, r_32, phi_1, phi_2, phi_3):
-    """Order equation with grids numbered from coarse (1) to fine (3)."""
+    """Absolute-value order formula, reindexed from coarse (1) to fine (3).
+
+    A positive result from this formula does not by itself establish convergence.
+    """
     epsilon_21, epsilon_32 = epsilon_of_monitoring_variable(
         phi_1, phi_2, phi_3
     )
     s = np.sign(epsilon_32 / epsilon_21)
-    return (
-        p * np.log(r_32)
-        + q_p(r_21, r_32, s, p)
-        - np.log(np.abs(epsilon_21 / epsilon_32))
-    )
+    return p - np.abs(
+        np.log(np.abs(epsilon_21 / epsilon_32)) - q_p(r_21, r_32, s, p)
+    ) / np.log(r_32)
 
 
-def main(data_dir=HERE / "data"):
-    cells, domain_area, phi, y_plus = load_run_data(data_dir)
-    phi_1, phi_2, phi_3 = phi
-    differences = np.diff(phi)
-    if np.any(phi == 0) or np.any(differences == 0):
-        raise ValueError("GCI requires nonzero friction factors and nonzero grid differences.")
-    if differences[0] * differences[1] < 0:
-        raise ValueError("Friction factors oscillate across grids; monotonic GCI is not applicable.")
-
+def indicator_table(cells, domain_area, phi, y_plus):
+    """Report numerical GCI separately from the observed convergence status."""
     # Representative cell size for a two-dimensional mesh, in metres.
     h = np.sqrt(domain_area / cells)
     r_21, r_32 = h[:-1] / h[1:]
     ratios = np.array([r_21, r_32])
-
-    solution = root_scalar(
-        apparent_order_root_eq,
-        args=(r_21, r_32, phi_1, phi_2, phi_3),
-        x0=2.0,
-        x1=2.1,
-    )
-    if not solution.converged or not np.isfinite(solution.root) or solution.root <= 0:
-        raise RuntimeError("Could not determine a positive apparent order of convergence.")
-    p = solution.root
-
-    # Each pair uses its finer-grid value as the relative-error reference.
-    refinement = ratios**p
-    phi_ext = (refinement * phi[1:] - phi[:-1]) / (refinement - 1)
-    approximate_relative_error = np.abs((phi[1:] - phi[:-1]) / phi[1:])
-    extrapolated_relative_error = np.abs((phi_ext - phi[1:]) / phi_ext)
-    gci_fine = 1.25 * approximate_relative_error / (refinement - 1)
 
     results = pd.DataFrame(
         {
@@ -112,33 +96,101 @@ def main(data_dir=HERE / "data"):
             "phi = X_n": phi,
             "r": ["", f"r_21 = {r_21:.3f}", f"r_32 = {r_32:.3f}"],
             "yPlus med.": y_plus,
-            "phi_ext": ["", *[f"{value:.6f}" for value in phi_ext]],
-            "e_a": ["", *[f"{100 * value:.2f}%" for value in approximate_relative_error]],
-            "e_ext": ["", *[f"{100 * value:.2f}%" for value in extrapolated_relative_error]],
-            "GCI fine": ["", *[f"{100 * value:.3f}%" for value in gci_fine]],
-            "p": ["", "", f"{p:.2f}"],
+            "phi_ext": ["", "N/A", "N/A"],
+            "e_a": ["", *[
+                f"{100 * abs((fine - coarse) / fine):.2f}%" if fine != 0 else "N/A"
+                for coarse, fine in zip(phi[:-1], phi[1:])
+            ]],
+            "e_ext": ["", "N/A", "N/A"],
+            "GCI fine": ["", "N/A", "N/A"],
+            "p": ["", "", "N/A"],
+            "grid trend": ["", "", "Undetermined"],
         }
     )
 
+    differences = np.diff(phi)
+    if np.any(phi == 0) or np.any(differences == 0):
+        return results, "GCI unavailable: zero indicator value or zero grid difference."
+    if differences[0] * differences[1] < 0:
+        results.loc[2, "grid trend"] = "Oscillatory"
+        return results, "GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable."
+    # The positive-order model has this lower bound as p approaches zero.
+    difference_ratio = abs(differences[0] / differences[1])
+    positive_order_supported = difference_ratio > np.log(r_21) / np.log(r_32)
+    results.loc[2, "grid trend"] = (
+        "Monotonic convergence" if positive_order_supported else "Non-convergent"
+    )
+    caveat = ""
+    if not positive_order_supported:
+        caveat = (
+            "\nNumerical GCI and extrapolation only: this grid sequence does not support "
+            "a positive-order convergence model, so GCI is not a validated uncertainty estimate. "
+            f"Absolute changes: coarse→medium={abs(differences[0]):.6g}, "
+            f"medium→fine={abs(differences[1]):.6g}."
+        )
+
+    solution = root_scalar(
+        apparent_order_root_eq,
+        args=(r_21, r_32, *phi),
+        x0=2.0,
+        x1=2.1,
+    )
+    if not solution.converged or not np.isfinite(solution.root) or solution.root <= 0:
+        return results, "GCI unavailable: solver could not determine a positive convergence order."
+    p = solution.root
+    refinement = ratios**p
+    phi_ext = (refinement * phi[1:] - phi[:-1]) / (refinement - 1)
+    # Each pair uses its finer-grid value as the relative-error reference.
+    approximate_relative_error = np.abs(differences / phi[1:])
+    gci_fine = 1.25 * approximate_relative_error / (refinement - 1)
+    results.loc[1:, "phi_ext"] = [f"{value:.6f}" for value in phi_ext]
+    results.loc[1:, "e_ext"] = [
+        f"{100 * abs((ext - fine) / ext):.2f}%" if ext != 0 else "N/A"
+        for ext, fine in zip(phi_ext, phi[1:])
+    ]
+    results.loc[1:, "GCI fine"] = [f"{100 * value:.3f}%" for value in gci_fine]
+    results.loc[2, "p"] = f"{p:.2f}"
+    return results, f"Apparent order (absolute-value formula): {p:.6f}" + caveat
+
+
+def main(data_dir=HERE / "data", output_dir=HERE / "tables"):
+    cells, domain_area, indicators, y_plus = load_run_data(data_dir)
+
     print(f"Run data: {Path(data_dir).resolve()}")
-    print("phi = inlet Darcy friction factor extracted from the axis pressure slope")
-    print(f"Grid refinement factors: r_21 = {r_21:.6f}, r_32 = {r_32:.6f}")
-    print(f"Apparent order of convergence: {p:.6f}")
+    print("Both indicators use axis CSVs; y+ medians use wall CSVs.")
+    print("Mesh counts and geometry: case_design/case_params.json")
+    print("Contraction K uses extrapolated step pressures, small-pipe bulk velocity and alpha = 1.")
     print("GCI fine refers to the finer mesh in each pair (rows 2 and 3).")
-    print(results.to_string(index=False, formatters={
-        "h [mm]": "{:.5f}".format,
-        "phi = X_n": "{:.5f}".format,
-        "yPlus med.": "{:.2f}".format,
-    }))
+    tables = []
+    for name, phi in indicators.items():
+        table, status = indicator_table(cells, domain_area, phi, y_plus)
+        print("\n" + "─" * 110)
+        print(f"Indicator: {name}")
+        print(status)
+        print(table.to_string(index=False, formatters={
+            "h [mm]": "{:.5f}".format,
+            "phi = X_n": "{:.6f}".format,
+            "yPlus med.": "{:.2f}".format,
+        }))
+        table.insert(0, "indicator", name)
+        table["status"] = status
+        tables.append(table)
+    results = pd.concat(tables, ignore_index=True)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output = output_dir / "gci.csv"
+    results.to_csv(output, index=False)
+    print(f"Saved {output}")
     return results
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=HERE / "data")
+    parser.add_argument("--output-dir", type=Path, default=HERE / "tables", help="Result table directory")
     args = parser.parse_args()
     try:
-        results = main(args.data_dir)
+        results = main(args.data_dir, args.output_dir)
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
         parser.exit(1, f"GCI error: {exc}\n")
     # Display `styled_results` in a notebook to render the formatted table.

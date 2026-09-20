@@ -94,10 +94,19 @@ three levels against `analytical_pressure.csv` and extracts the pressure
 drops. `gci.py` loads the three axis CSVs directly and uses the same pressure-slope
 fit to calculate the inlet Darcy friction factor on each mesh. It reads median
 y+ from the corresponding yplus CSVs and cell counts and geometry from
-`case_design/case_params.json`. It reports the apparent order, Richardson
-extrapolation, percentage errors and GCI for both grid pairs (Fs = 1.25).
+`case_design/case_params.json`. A second table uses the contraction loss
+coefficient computed directly from the same axis CSVs by `minor_losses.py`.
+Each indicator reports the apparent order, Richardson extrapolation,
+percentage errors and GCI for both grid pairs (Fs = 1.25), using the absolute-value
+apparent-order formula. A separate grid-trend flag identifies monotonic sequences
+that do not support positive-order convergence. Their numerical GCI and
+extrapolation remain visible, with an explicit note that the GCI is not a
+validated uncertainty estimate. Degenerate or oscillatory sequences retain N/A
+with an explanation.
 It requires NumPy, pandas and SciPy. The default data path works from any working
 directory; use `--data-dir /path/to/data` to select another set of CSVs.
+Both GCI indicator tables, including grid trends and status notes, are saved in
+`postprocess/tables/gci.csv`. Use `--output-dir` to change the table directory.
 
 Run `python3 postprocess/minor_losses.py` to estimate expansion and contraction
 loss coefficients from the available axis CSVs. It reuses the developed-region
@@ -105,9 +114,10 @@ fits in `plot_pressure.py`, evaluating both pressures at the step location and
 including the bulk-velocity change in Bernoulli's equation (kinetic-energy
 correction factors equal to one). Both coefficients reference the small-pipe
 velocity. Results, extrapolated pressures and fit windows are saved in
-`postprocess/figs/minor_losses.csv`; `minor_losses.png` labels K above each
+`postprocess/tables/minor_losses.csv`; `postprocess/figs/minor_losses.png` labels K above each
 extrapolated pressure jump. Use `--no-plot` for a standard-library-only calculation,
-or `--data-dir` and `--output-dir` to select alternate directories.
+or `--data-dir`, `--output-dir` (tables), and `--figures-dir` (plots) to select
+alternate directories.
 
 ## Notes
 
