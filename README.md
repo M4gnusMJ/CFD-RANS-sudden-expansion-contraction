@@ -108,6 +108,29 @@ directory; use `--data-dir /path/to/data` to select another set of CSVs.
 Both GCI indicator tables, including grid trends and status notes, are saved in
 `postprocess/tables/gci.csv`. Use `--output-dir` to change the table directory.
 
+The same command also saves `postprocess/figs/pressure_gci.png`: the fine-grid
+axis pressure with discretization error bars, plus coarse and medium profiles.
+Following the [Celik et al. profile procedure](https://doi.org/10.1115/1.2960953),
+it solves the absolute-value apparent-order equation at every common sample,
+including oscillatory sequences, and takes the arithmetic mean of all resolved
+positive local orders (no clipping). Zero/roundoff grid differences and unresolved
+orders are excluded from that mean and explicitly flagged in the output.
+The absolute error-bar half-width at each location is
+`1.25 * abs(p_fine/rho - p_medium/rho) / (r_medium_fine**p_average - 1)`.
+This avoids division by zero gauge pressure; relative GCI is blank at zero pressure
+and depends on the pressure datum. All three CSVs must use the same pressure datum
+and matching, unique x coordinates; mismatched sampling is rejected rather than
+interpolated across the steps. Pressures come entirely from the run data;
+refinement ratios use the existing 2D representative cell sizes and mesh metadata.
+
+`postprocess/tables/pressure_gci.csv` contains every sample's three pressures,
+local and average order, convergence trend, absolute/relative GCI and bounds.
+The plot shows the full uncertainty envelope and approximately 65 error bars,
+including the maximum uncertainty. Numerical bars remain available at oscillatory
+and non-convergent points using the global mean order; this does not establish
+local asymptotic convergence. Use `--figures-dir` for another plot directory or
+`--no-plot` for tables only. Plotting requires Matplotlib.
+
 Run `python3 postprocess/minor_losses.py` to estimate expansion and contraction
 loss coefficients from the available axis CSVs. It reuses the developed-region
 fits in `plot_pressure.py`, evaluating both pressures at the step location and
