@@ -71,7 +71,7 @@ run_<level>/log.*              blockMesh / checkMesh / simpleFoam output
 run_<level>/postProcessing/    raw function-object output
 ```
 
-`run_*/` is gitignored — the two CSVs per level under `postprocess/data/` are
+`run_*/` is gitignored — the exported CSVs and metadata under `postprocess/data/` are
 what gets committed. To look at a run in ParaView: `paraFoam -case run_medium`
 inside the container, or `touch run_medium/run.foam` and open that file.
 
@@ -141,6 +141,75 @@ velocity. Results, extrapolated pressures and fit windows are saved in
 extrapolated pressure jump. Use `--no-plot` for a standard-library-only calculation,
 or `--data-dir`, `--output-dir` (tables), and `--figures-dir` (plots) to select
 alternate directories.
+
+### Upstream velocity and wall behaviour
+
+`Allrun.sh` now also samples radial profiles at 4D, 3D and 2D upstream of both
+steps and exports local wall shear and wall-cell y+. D is the upstream diameter:
+the requested 3D stations are x=2.7 m (expansion) and x=8.4 m (contraction).
+`sample_wall_profiles.py --generate` builds the sampling include from
+`case_params.json`; `Allrun.sh` runs this before copying the cases.
+
+Existing saved solutions can be sampled without rerunning the solver. In a shell
+where OpenFOAM v2412 is loaded, run:
+
+```bash
+python3 postprocess/sample_wall_profiles.py --resample
+```
+
+This uses `simpleFoam -postProcess -latestTime` with a separate diagnostics
+dictionary; it leaves the original solver configuration intact. Optional mesh
+arguments select particular levels, e.g. `--resample fine`. Logs are saved as
+`run_<level>/log.upstreamDiagnostics`. Without `--resample`, the command exports
+already sampled diagnostics. Numeric time ordering prevents selection of stale
+lexicographically last directories; profiles, wall data and final solution times
+must match.
+
+The export writes `<level>_velocity_profiles.csv`, `<level>_wall_diagnostics.csv`
+and `<level>_wall_metadata.json` into `postprocess/data`. Metadata records the
+sample time, viscosity, stations, upstream bulk speeds and wedge geometry.
+All subsequent numerical analysis reads only these exported files:
+
+```bash
+python3 postprocess/velocity_profiles.py
+```
+
+Outputs are `figs/upstream_velocity_profiles.png` (three-mesh velocity,
+u+ versus y+, and turbulent-viscosity profiles),
+`figs/upstream_velocity_development.png` (4D/3D/2D comparisons), and
+`tables/upstream_wall_summary.csv`, `tables/upstream_development.csv` and
+`tables/upstream_scaled_profiles.csv`, all under `postprocess/`.
+Options `--data-dir`, `--output-dir`, `--figures-dir` and `--no-plot` work as for GCI.
+
+Wall scaling uses `u_tau = sqrt(abs(tau_wall_x/rho))`, `u+ = Ux/u_tau` and
+`y+ = distance_from_wall*u_tau/nu`. The wall shear is sampled directly on the
+wall faces ([OpenFOAM wallShearStress documentation](https://doc.openfoam.com/2312/tools/post-processing/function-objects/field/wallShearStress/))
+and interpolated axially between neighbouring faces in the same pipe section.
+Using wall shear avoids assuming fully developed flow to establish the scaling.
+Wall distance uses actual wall-face coordinates, accounting for the wedge's
+wall at `R*cos(half_angle)` in the symmetry plane. Profiles use `cellPointFace`
+interpolation and 240 points clustered toward the wall. These points are not
+independent mesh cells. Inner-scaled plots and sublayer metrics exclude samples
+closer to the wall than the locally reported first-cell y+; the full exported
+table retains them with a `below_first_cell` flag.
+
+The sublayer metric compares u+ with y+ between the first cell and y+=5.
+The log-region diagnostic compares with `ln(y+)/0.41 + 5` only where y+>=30
+and wall distance/R<=0.2; the plotted log reference extends farther for context,
+but is not expected to describe the pipe core. Empty diagnostic ranges produce
+blank metrics and zero sample counts. The streamwise comparison reports
+area-weighted RMS and maximum changes normalized by the nominal bulk speed.
+Bulk integration assumes axisymmetry and uses a constant centreline continuation
+and the no-slip wall endpoint; it is an approximate sampling consistency check.
+
+Small streamwise changes support local development of the mean velocity, but
+do not prove that turbulence has reached equilibrium after the expansion.
+Low wall y+, the linear sublayer, the log-region shape, radial velocity and
+mesh sensitivity should be considered together. These are numerical consistency
+checks; a quantitative model-validation claim additionally needs suitable
+experimental or DNS reference data.
+
+Verification: `python3 -m unittest discover -s postprocess -p 'test_*.py'`.
 
 ## Notes
 

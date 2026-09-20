@@ -10,6 +10,7 @@
 cd "$(dirname "$0")"
 
 LEVELS=${*:-"coarse medium fine"}
+python3 postprocess/sample_wall_profiles.py --generate || exit 1
 
 die() {
     echo "  FAILED: $1"
@@ -70,6 +71,9 @@ for LEVEL in $LEVELS; do
     else
         echo "    NO yPlusSurface output"
     fi
+
+    # --- upstream velocity and wall diagnostics ----------------------------
+    python3 postprocess/sample_wall_profiles.py "$LEVEL" || exit 1
 
     # --- y+ summary straight from the solver, as a cross-check --------------
     YD=$(ls "$RUN"/postProcessing/yPlusWall/*/yPlus.dat 2>/dev/null | tail -1)

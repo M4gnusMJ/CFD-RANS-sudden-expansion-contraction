@@ -404,6 +404,7 @@ with open(os.path.join(OUT, "design_summary.txt"), "w") as fh:
 # value at the top of THIS file updates everything downstream.
 import json
 params = {
+    "half_angle_deg": half_angle_deg,
     "nu": nu, "d1": d1, "d2": d2, "Re1": Re1, "Re2": Re2, "U1": U1, "U2": U2,
     "L1": L1, "L2": L2, "L3": L3, "Ltot": Ltot, "x_exp": x_exp, "x_con": x_con,
     "f1": f1, "f2": f2, "u_tau1": u_tau1, "u_tau2": u_tau2,

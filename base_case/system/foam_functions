@@ -147,6 +147,8 @@ wallShear
 }
 
 // ---- 7. residuals, so the convergence claim has evidence -------------------
+#include "upstream_diagnostics"
+
 residuals
 {
     type            solverInfo;
