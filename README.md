@@ -99,6 +99,16 @@ extrapolation, percentage errors and GCI for both grid pairs (Fs = 1.25).
 It requires NumPy, pandas and SciPy. The default data path works from any working
 directory; use `--data-dir /path/to/data` to select another set of CSVs.
 
+Run `python3 postprocess/minor_losses.py` to estimate expansion and contraction
+loss coefficients from the available axis CSVs. It reuses the developed-region
+fits in `plot_pressure.py`, evaluating both pressures at the step location and
+including the bulk-velocity change in Bernoulli's equation (kinetic-energy
+correction factors equal to one). Both coefficients reference the small-pipe
+velocity. Results, extrapolated pressures and fit windows are saved in
+`postprocess/figs/minor_losses.csv`; `minor_losses.png` labels K above each
+extrapolated pressure jump. Use `--no-plot` for a standard-library-only calculation,
+or `--data-dir` and `--output-dir` to select alternate directories.
+
 ## Notes
 
 - Keep Nextcloud sync paused while working in this folder. It has silently
