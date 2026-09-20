@@ -100,55 +100,63 @@ def analyse(data_dir):
     return profiles, pd.DataFrame(summary), pd.DataFrame(changes)
 
 
+def plot_wall_curve(ax, profile, label, color):
+    resolved = profile[~profile.below_first_cell]
+    ax.semilogx(resolved.yplus, resolved.uplus, color=color, label=label)
+
+
+def style_wall_axes(ax, max_yplus, title):
+    """Shared wall-law references and formatting for both velocity figures."""
+    viscous = np.geomspace(.1, 25, 100)
+    log_y = np.geomspace(1, max(31, max_yplus), 100)
+    ax.plot(viscous, viscous, "k--", label="Viscous: u+ = y+")
+    ax.plot(log_y, np.log(log_y) / .41 + 5, "k:", label="Log reference (κ=0.41, B=5)")
+    ax.set(xlim=(.1, None), ylim=(0, 25), title=title,
+           xlabel="y+ (distance from wall)", ylabel="u+")
+    ax.grid(alpha=.25)
+    ax.legend(fontsize=8, frameon=False, loc="upper left")
+
+
 def plot(profiles, summary, figures_dir):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    fig, axes = plt.subplots(2, 3, figsize=(15, 9))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
     for row, step in enumerate(("expansion", "contraction")):
+        ax = axes[row]
         name = f"{step}_3D"
         for level in LEVELS:
             p = profiles[level, name]
             wall_yplus = summary[(summary.mesh == level) & (summary.station == name)].wall_cell_yplus.iloc[0]
-            axes[row, 0].plot(p.r_over_R, p.U_over_Ubulk, color=COLORS[level], label=level)
-            resolved = p[~p.below_first_cell]
-            axes[row, 1].semilogx(resolved.yplus, resolved.uplus, color=COLORS[level],
-                                label=f"{level} (wall cell y+={wall_yplus:.2f})")
-            axes[row, 2].semilogx(resolved.yplus, resolved.nut_over_nu, color=COLORS[level], label=level)
-        viscous = np.geomspace(.1, 5, 60)
+            plot_wall_curve(ax, p, f"{level} (wall cell y+={wall_yplus:.2f})", COLORS[level])
         max_log = max(profiles[level, name].yplus.max() for level in LEVELS)
-        log_y = np.geomspace(30, max(31, max_log), 60)
-        axes[row, 1].plot(viscous, viscous, "k--", label="Viscous: u+ = y+")
-        axes[row, 1].plot(log_y, np.log(log_y) / .41 + 5, "k:", label="Log reference (κ=0.41, B=5)")
-        axes[row, 1].set_xlim(.1, None)
-        axes[row, 2].set_xlim(.1, None)
         x = summary[summary.station == name]["x [m]"].iloc[0]
-        axes[row, 0].set(title=f"3D before {step}: x = {x:g} m", xlabel="r/R", ylabel="Ux / nominal Ubulk")
-        axes[row, 1].set(title="Wall-scaled axial velocity", xlabel="y+ (distance from wall)", ylabel="u+")
-        axes[row, 2].set(title="Modelled turbulent viscosity", xlabel="y+", ylabel="nut / nu")
-        for ax in axes[row]:
-            ax.grid(alpha=.25)
-            ax.legend(fontsize=8, frameon=False)
-    fig.suptitle("Upstream velocity and wall behaviour — measured wall shear scaling")
-    fig.text(.5, .015, "Wall-scaled curves omit samples below the first cell centre. "
-             "Wall-law agreement is a consistency check, not experimental validation.", ha="center", fontsize=9)
-    fig.tight_layout(rect=(0, .04, 1, .96))
+        style_wall_axes(ax, max_log, f"3D before {step}: x = {x:g} m")
+    fig.suptitle("Wall-scaled axial velocity")
+    fig.tight_layout(rect=(0, 0, 1, .95))
     fig.savefig(figures_dir / "upstream_velocity_profiles.png", dpi=160)
     plt.close(fig)
 
-    fig, axes = plt.subplots(2, 3, figsize=(14, 8), sharex=True, sharey="row")
-    for row, step in enumerate(("expansion", "contraction")):
-        for col, level in enumerate(LEVELS):
+    fig, axes = plt.subplots(3, 2, figsize=(12, 13), sharey=True)
+    station_colors = {2: "#d6604d", 3: "#e69f00", 4: "#2166ac"}
+    for row, level in enumerate(LEVELS):
+        for col, step in enumerate(("expansion", "contraction")):
             ax = axes[row, col]
-            for offset, style in ((4, "--"), (3, "-"), (2, ":")):
-                p = profiles[level, f"{step}_{offset}D"]
-                ax.plot(p.r_over_R, p.U_over_Ubulk, style, label=f"{offset}D upstream")
-            ax.set(title=f"{step.capitalize()} — {level}", xlabel="r/R", ylabel="Ux / nominal Ubulk")
-            ax.grid(alpha=.25)
-            ax.legend(frameon=False)
-    fig.suptitle("Streamwise development: compare profiles at neighbouring stations")
-    fig.tight_layout(rect=(0, 0, 1, .96))
+            max_yplus = 0
+            for offset in (2, 3, 4):
+                name = f"{step}_{offset}D"
+                p = profiles[level, name]
+                station = summary[(summary.mesh == level) & (summary.station == name)].iloc[0]
+                label = f"{offset}D (x={station['x [m]']:g} m, wall cell y+={station.wall_cell_yplus:.2f})"
+                plot_wall_curve(ax, p, label, station_colors[offset])
+                max_yplus = max(max_yplus, p.yplus.max())
+            style_wall_axes(ax, max_yplus, f"Before {step} — {level}")
+    # Keep the common scale while retaining any excursions in the sampled data.
+    axes[0, 0].set_ylim(0, max(25, 1.05 * max(
+        p.loc[~p.below_first_cell, "uplus"].max() for p in profiles.values())))
+    fig.suptitle("Streamwise development of wall-scaled axial velocity")
+    fig.tight_layout(rect=(0, 0, 1, .97))
     fig.savefig(figures_dir / "upstream_velocity_development.png", dpi=160)
     plt.close(fig)
 
