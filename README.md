@@ -91,9 +91,13 @@ python3 postprocess/gci.py
 
 `plot_pressure.py` reads `postprocess/data/<level>_axis.csv`, compares the
 three levels against `analytical_pressure.csv` and extracts the pressure
-drops. `gci.py` takes those three values and reports the apparent order, the
-Richardson-extrapolated value and the Grid Convergence Index
-(Celik et al. 2008, Fs = 1.25).
+drops. `gci.py` loads the three axis CSVs directly and uses the same pressure-slope
+fit to calculate the inlet Darcy friction factor on each mesh. It reads median
+y+ from the corresponding yplus CSVs and cell counts and geometry from
+`case_design/case_params.json`. It reports the apparent order, Richardson
+extrapolation, percentage errors and GCI for both grid pairs (Fs = 1.25).
+It requires NumPy, pandas and SciPy. The default data path works from any working
+directory; use `--data-dir /path/to/data` to select another set of CSVs.
 
 ## Notes
 
