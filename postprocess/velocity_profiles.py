@@ -87,7 +87,7 @@ def analyse(data_dir):
                 "bulk_error [%]": 100 * (bulk / station["bulk_velocity"] - 1),
                 "max_radial_speed/Ubulk [%]": 100 * scaled.Ur.abs().max() / station["bulk_velocity"],
                 "sublayer_RMS_relative [%]": 100 * np.sqrt(np.mean((viscous.uplus / viscous.yplus - 1) ** 2)),
-                "log_layer_RMS_uplus": np.sqrt(np.mean((log_layer.uplus - np.log(log_layer.yplus) / .41 - 5) ** 2)),
+                "log_layer_RMS_uplus": np.sqrt(np.mean((log_layer.uplus - np.log(log_layer.yplus) / .41 - 5.2) ** 2)),
                 "sublayer_samples": len(viscous), "log_layer_samples": len(log_layer),
             })
         for step in ("expansion", "contraction"):
@@ -110,7 +110,7 @@ def style_wall_axes(ax, max_yplus, title):
     viscous = np.geomspace(.1, 25, 100)
     log_y = np.geomspace(1, max(31, max_yplus), 100)
     ax.plot(viscous, viscous, "k--", label="Viscous: u+ = y+")
-    ax.plot(log_y, np.log(log_y) / .41 + 5, "k:", label="Log reference (κ=0.41, B=5)")
+    ax.plot(log_y, np.log(log_y) / .41 + 5.2, "k:", label="Log reference (κ=0.41, B=5.2 (Pope))")
     ax.set(xlim=(.1, None), ylim=(0, 25), title=title,
            xlabel="y+ (distance from wall)", ylabel="u+")
     ax.grid(alpha=.25)
