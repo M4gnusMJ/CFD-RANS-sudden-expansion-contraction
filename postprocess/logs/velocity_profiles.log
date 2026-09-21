@@ -1,0 +1,22 @@
+  mesh        station  x [m] solution_time  u_tau [m/s]  tau_x/rho [m2/s2]  wall_cell_yplus     Re_tau  Darcy_f_from_wall  integrated_Ubulk [m/s]  bulk_error [%]  max_radial_speed/Ubulk [%]  sublayer_RMS_relative [%]  log_layer_RMS_uplus  sublayer_samples  log_layer_samples
+coarse   expansion_3D    2.7          1351     0.127875          -0.016352         1.687987 638.983728           0.032704                1.997817       -0.109142                    0.030540                   3.317571             2.048694                23                 30
+coarse contraction_3D   11.4          1351     0.035790          -0.001281         1.724123 357.679649           0.040989                0.499414       -0.117217                    0.002366                   3.216833             1.780489                22                 18
+medium   expansion_3D    2.7           215     0.119775          -0.014346         1.054230 598.512543           0.028692                1.999017       -0.049129                    0.032859                   1.722451             0.840127                32                 29
+medium contraction_3D   11.4           215     0.033491          -0.001122         1.076205 334.710040           0.035894                0.499730       -0.053925                    0.000927                   1.780830             0.679800                32                 17
+  fine   expansion_3D    2.7           135     0.115787          -0.013407         0.679670 578.584211           0.026813                1.999144       -0.042789                    0.025210                   0.465109             0.198621                42                 28
+  fine contraction_3D   11.4           135     0.032022          -0.001025         0.686239 320.029777           0.032814                0.499859       -0.028252                    0.000831                   0.963059             0.246902                41                 16
+  mesh        step comparison  area_weighted_RMS/Ubulk [%]  maximum_difference/Ubulk [%]
+coarse   expansion   3D vs 4D                     0.154815                      0.462893
+coarse   expansion   3D vs 2D                     0.142827                      1.030302
+coarse contraction   3D vs 4D                     0.128600                      1.890893
+coarse contraction   3D vs 2D                     0.019761                      0.185182
+medium   expansion   3D vs 4D                     0.177386                      0.515521
+medium   expansion   3D vs 2D                     0.173272                      0.505707
+medium contraction   3D vs 4D                     0.101773                      1.641367
+medium contraction   3D vs 2D                     0.164299                      2.473413
+  fine   expansion   3D vs 4D                     1.088579                     20.057723
+  fine   expansion   3D vs 2D                     0.125387                      0.396489
+  fine contraction   3D vs 4D                     0.003664                      0.010316
+  fine contraction   3D vs 2D                     0.008416                      0.031732
+Tables: /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/tables
+Figures: /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/figs

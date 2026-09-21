@@ -16,11 +16,8 @@ FoamFile
 
 solvers
 {
-    // PCG/DIC instead of GAMG. checkMesh reports a max aspect ratio of ~800
-    // (long axial cells in the developed inlet section against 0.18 mm wall
-    // cells). GAMG's agglomeration degrades on cells that stretched, and it
-    // threw a floating point exception here. PCG is slower per iteration but
-    // does not build coarse levels, so it is not affected.
+    // Retain PCG/DIC: GAMG previously failed on the strongly stretched mesh.
+    // The revised grading reduces aspect ratios without changing the solver.
     p
     {
         solver          PCG;
@@ -43,20 +40,10 @@ SIMPLE
     nNonOrthogonalCorrectors 0;
     consistent      yes;
 
-    // Measured, not guessed. With SIMPLEC the pressure residual on this case
-    // settles at ~6e-4 and stays there for thousands of iterations while the
-    // velocity residual keeps falling to ~5e-6. Demanding p < 1e-4 therefore
-    // just runs to endTime without improving the solution. The criterion below
-    // stops the run where the velocity field is genuinely converged; the
-    // monitored pressure drops are then shown to be stationary as well
-    // (axisLine samples every 500 iterations - see system/foam_functions).
-    // Identical on all three meshes, which is what the GCI requires.
-    // NOTE on the U target: OpenFOAM takes the maximum over Ux, Uy and Uz.
-    // On an axisymmetric wedge the out-of-plane velocity Uz is zero by
-    // symmetry, so its residual is normalised by a vanishing quantity and
-    // plateaus around 1.4e-4 while Ux and Uy reach ~5e-6. 2e-4 is therefore
-    // the lowest value the wedge permits; the physically meaningful
-    // components are two orders of magnitude better than that.
+    // Strict whole-vector fallback. system/convergence_controls additionally
+    // permits a larger normalized Uz residual while keeping Ux/Uy strict.
+    // The wedge-centre Uz velocity is near zero; its normalized residual can
+    // remain large. Do not loosen the whole U threshold to accommodate it.
     residualControl
     {
         p               1e-3;

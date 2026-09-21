@@ -26,7 +26,11 @@ def loss_coefficient(p_up, p_down, u_up, u_down, u_ref):
         raise ValueError("Pressures and velocities must be finite.")
     if u_ref <= 0:
         raise ValueError("The reference velocity must be positive.")
-    return (2 * (p_up - p_down) + u_up**2 - u_down**2) / u_ref**2
+
+    delta_p = p_up - p_down
+
+    # Bernoulli: remove the pressure change associated with bulk acceleration.
+    return (2 * delta_p + u_up**2 - u_down**2) / u_ref**2
 
 
 def calculate_losses(axis, level):

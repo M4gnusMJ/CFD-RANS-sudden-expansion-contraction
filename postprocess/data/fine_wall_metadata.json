@@ -1,0 +1,55 @@
+{
+  "nu": 1e-05,
+  "stations": {
+    "expansion_4D": {
+      "step": "expansion",
+      "upstream_diameters": 4,
+      "x": 2.6,
+      "diameter": 0.1,
+      "bulk_velocity": 2.0,
+      "wall_radius": 0.04996954135095479
+    },
+    "expansion_3D": {
+      "step": "expansion",
+      "upstream_diameters": 3,
+      "x": 2.7,
+      "diameter": 0.1,
+      "bulk_velocity": 2.0,
+      "wall_radius": 0.04996954135095479
+    },
+    "expansion_2D": {
+      "step": "expansion",
+      "upstream_diameters": 2,
+      "x": 2.8,
+      "diameter": 0.1,
+      "bulk_velocity": 2.0,
+      "wall_radius": 0.04996954135095479
+    },
+    "contraction_4D": {
+      "step": "contraction",
+      "upstream_diameters": 4,
+      "x": 11.2,
+      "diameter": 0.2,
+      "bulk_velocity": 0.5,
+      "wall_radius": 0.09993908270190958
+    },
+    "contraction_3D": {
+      "step": "contraction",
+      "upstream_diameters": 3,
+      "x": 11.4,
+      "diameter": 0.2,
+      "bulk_velocity": 0.5,
+      "wall_radius": 0.09993908270190958
+    },
+    "contraction_2D": {
+      "step": "contraction",
+      "upstream_diameters": 2,
+      "x": 11.6,
+      "diameter": 0.2,
+      "bulk_velocity": 0.5,
+      "wall_radius": 0.09993908270190958
+    }
+  },
+  "solution_time": "135",
+  "source_case": "/home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/run_fine"
+}

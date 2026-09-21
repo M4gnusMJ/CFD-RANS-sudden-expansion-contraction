@@ -23,7 +23,7 @@ stopAt          endTime;
 
 // Iteration cap only. residualControl in fvSolution stops the run earlier once
 // it is converged, so this just has to be comfortably larger than needed.
-endTime         10000;
+endTime         100000;
 deltaT          1;
 
 writeControl    timeStep;
@@ -31,7 +31,7 @@ writeInterval   2000;
 purgeWrite      3;
 
 writeFormat     ascii;
-writePrecision  8;
+writePrecision  12;  // preserve wedge geometry when renumberMesh rewrites points
 writeCompression off;
 
 timeFormat      general;

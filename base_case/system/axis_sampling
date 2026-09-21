@@ -1,0 +1,6 @@
+// Generated from case_design/case_params.json; full pipe length.
+sets ( line { type uniform; axis x;
+    start (0 0.0002 0);
+    end (15 0.0002 0);
+    nPoints 1200;
+} );

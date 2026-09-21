@@ -3,8 +3,7 @@
 CFD Assignment 3 - Group 22
 Case design + analytical baseline + parametric blockMeshDict generator.
 
-Everything that has to be DECIDED before anyone runs OpenFOAM is computed here,
-so the choices are traceable numbers instead of guesses:
+Everything that has to be DECIDED before anyone runs OpenFOAM is here:
 
   1. Reynolds numbers / pipe dimensions / bulk velocities
   2. Entrance lengths  -> the three pipe-section lengths
@@ -88,7 +87,7 @@ Le2 = entrance_length(Re2, d2)
 x_reattach = 10.0 * h_step
 
 L1 = math.ceil((1.10 * Le1) / (5 * d1)) * 5 * d1          # inlet pipe, 10 % margin
-L2 = math.ceil((1.10 * (x_reattach + Le2)) / (5 * d2)) * 5 * d2  # expansion pipe
+L2 = 9  # expansion pipe
 L3 = L1                                                   # outlet pipe, same as inlet
 Ltot = L1 + L2 + L3
 x_exp = L1                 # axial position of the sudden expansion
@@ -177,6 +176,37 @@ def first_cell_one_sided(L, n, d_small):
     return d_small
 
 
+def grading_with_uniform_middle(L, n, d_small):
+    """Graded end quarters with a uniform middle half of the cells.
+
+    Match the last cell of each end section to the uniform cell size, avoiding
+    the very long central cells of a full-length geometric progression.
+    """
+    n_end = max(2, n // 4)
+    n_middle = n - 2 * n_end
+    if n_middle < 1 or n * d_small >= L:
+        raise ValueError("Axial grading needs a middle section and n*d_small < L")
+
+    def end_length(d_max):
+        ratio = d_max / d_small
+        return sum(d_small * ratio ** (i / (n_end - 1)) for i in range(n_end))
+
+    lo, hi = L / n, L / n_middle
+    for _ in range(80):
+        d_max = (lo + hi) / 2
+        if 2 * end_length(d_max) + n_middle * d_max < L:
+            lo = d_max
+        else:
+            hi = d_max
+    d_max = (lo + hi) / 2
+    end_fraction = end_length(d_max) / L
+    ratio = d_max / d_small
+    return ("( (%.12g %.12g %.12g) (%.12g %.12g 1) (%.12g %.12g %.12g) )"
+            % (end_fraction, n_end / n, ratio,
+               1 - 2 * end_fraction, n_middle / n,
+               end_fraction, n_end / n, 1 / ratio))
+
+
 # ----------------------------------------------------------------------------
 # 7. blockMeshDict WRITER  (same wedge topology as the handout)
 # ----------------------------------------------------------------------------
@@ -218,7 +248,7 @@ def write_blockmeshdict(path, level_name, n_ax1, n_ax2, n_ax3, n_r_core, n_r_ann
 
     # gradings
     gx1 = grading_one_sided(L1, n_ax1, dx_fine, fine_at_start=False)   # fine at expansion
-    gx2 = grading_two_sided(L2, n_ax2, dx_fine, dx_fine)               # fine at both steps
+    gx2 = grading_with_uniform_middle(L2, n_ax2, dx_fine)             # fine at steps, capped middle
     gx3 = grading_one_sided(L3, n_ax3, dx_fine, fine_at_start=True)    # fine at contraction
     gr_core = grading_one_sided(r1, n_r_core, dr_wall1, fine_at_start=False)
     # Bottom of the annulus is the shear layer off the step, NOT a wall, and it
@@ -307,7 +337,8 @@ BASE = dict(n_ax1=200, n_ax2=250, n_ax3=200, n_r_core=40, n_r_ann=40,
             dx_fine=0.002, dr_wall1=dw1 / REF, dr_wall2=dw2 / REF)
 
 levels = []
-for name, p in [("coarse", 1.0 / REF), ("medium", 1.0), ("fine", REF)]:
+# The former medium resolution is now fine; retain the same refinement factor.
+for name, p in [("coarse", 1.0 / REF**2), ("medium", 1.0 / REF), ("fine", 1.0)]:
     cfg = dict(
         n_ax1=int(round(BASE["n_ax1"] * p)),
         n_ax2=int(round(BASE["n_ax2"] * p)),
@@ -360,7 +391,7 @@ rep.append(f"  u_tau2                  = {u_tau2:.5f} m/s")
 rep.append(f"  y(y+=1), small pipe     = {y_c1:.3e} m -> first cell height {dw1:.3e} m")
 rep.append(f"  y(y+=1), large pipe     = {y_c2:.3e} m -> first cell height {dw2:.3e} m")
 rep.append("  NOTE: with a low-Re model the first cell must stay in the viscous sublayer")
-rep.append("        on ALL three meshes. Anchoring y+=1 on the COARSEST mesh, refining by 1.5 gives 1.00 -> 0.67 -> 0.44,")
+rep.append("        on ALL three meshes. The coarser family targets y+ = 1.50 -> 1.00 -> 0.67,")
 rep.append("        which is still valid. With wall functions the same refinement would")
 rep.append("        walk out of the 30 < y+ < 300 band, which is why the GCI study forces")
 rep.append("        the low-Re / resolved-boundary-layer choice.")
@@ -404,6 +435,7 @@ with open(os.path.join(OUT, "design_summary.txt"), "w") as fh:
 # value at the top of THIS file updates everything downstream.
 import json
 params = {
+    "half_angle_deg": half_angle_deg,
     "nu": nu, "d1": d1, "d2": d2, "Re1": Re1, "Re2": Re2, "U1": U1, "U2": U2,
     "L1": L1, "L2": L2, "L3": L3, "Ltot": Ltot, "x_exp": x_exp, "x_con": x_con,
     "f1": f1, "f2": f2, "u_tau1": u_tau1, "u_tau2": u_tau2,

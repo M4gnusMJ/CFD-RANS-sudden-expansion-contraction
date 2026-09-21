@@ -1,0 +1,5 @@
+mesh,step,comparison,area_weighted_RMS/Ubulk [%],maximum_difference/Ubulk [%]
+coarse,expansion,3D vs 4D,0.16426068965515891,0.4891222209339796
+coarse,expansion,3D vs 2D,0.14347573845347028,0.43456999374646976
+coarse,contraction,3D vs 4D,0.03574650956165869,0.27050435807326534
+coarse,contraction,3D vs 2D,0.031407394795526546,0.2800133218574884

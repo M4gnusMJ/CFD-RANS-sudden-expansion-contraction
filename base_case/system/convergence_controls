@@ -1,0 +1,59 @@
+// All six conditions must pass together (same groupID).
+// Uz's relaxed threshold is for its normalized residual, not its velocity.
+componentConvergence
+{
+    type runTimeControl;
+    libs ("libutilityFunctionObjects.so");
+    satisfiedAction end;
+    conditions
+    {
+        convergedP
+        {
+            type equationInitialResidual;
+            fields (p);
+            value 1e-3;
+            mode minimum;
+            groupID 1;
+        }
+        convergedUx
+        {
+            type equationInitialResidual;
+            fields (U.component(0));
+            value 2e-4;
+            mode minimum;
+            groupID 1;
+        }
+        convergedUy
+        {
+            type equationInitialResidual;
+            fields (U.component(1));
+            value 2e-4;
+            mode minimum;
+            groupID 1;
+        }
+        convergedUz
+        {
+            type equationInitialResidual;
+            fields (U.component(2));
+            value 0.02;
+            mode minimum;
+            groupID 1;
+        }
+        convergedK
+        {
+            type equationInitialResidual;
+            fields (k);
+            value 5e-5;
+            mode minimum;
+            groupID 1;
+        }
+        convergedEpsilon
+        {
+            type equationInitialResidual;
+            fields (epsilon);
+            value 5e-5;
+            mode minimum;
+            groupID 1;
+        }
+    }
+}

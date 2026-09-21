@@ -1,10 +1,7 @@
 indicator,mesh,n,h [mm],phi = X_n,r,yPlus med.,phi_ext,e_a,e_ext,GCI fine,p,grid trend,status
-Inlet Darcy friction factor,coarse,16033,7.492277568585053,0.02768757466099165,,1.0866724,,,,,,,Apparent order (absolute-value formula): 1.467227
-Inlet Darcy friction factor,medium,36000,5.0,0.025580083228533237,r_21 = 1.498,0.69853481,0.022979,8.24%,11.32%,12.712%,,,Apparent order (absolute-value formula): 1.467227
-Inlet Darcy friction factor,fine,81000,3.3333333333333335,0.02441363554929976,r_32 = 1.500,0.46087137,0.022979,4.78%,6.24%,7.347%,1.47,Monotonic convergence,Apparent order (absolute-value formula): 1.467227
-Contraction loss coefficient K,coarse,16033,7.492277568585053,0.7366860826765471,,1.0866724,,,,,,,"Apparent order (absolute-value formula): 1.413645
-Numerical GCI and extrapolation only: this grid sequence does not support a positive-order convergence model, so GCI is not a validated uncertainty estimate. Absolute changes: coarse→medium=0.00862365, medium→fine=0.0153487."
-Contraction loss coefficient K,medium,36000,5.0,0.7280624341675885,r_21 = 1.498,0.69853481,0.716882,1.18%,1.56%,1.920%,,,"Apparent order (absolute-value formula): 1.413645
-Numerical GCI and extrapolation only: this grid sequence does not support a positive-order convergence model, so GCI is not a validated uncertainty estimate. Absolute changes: coarse→medium=0.00862365, medium→fine=0.0153487."
-Contraction loss coefficient K,fine,81000,3.3333333333333335,0.712713694125263,r_32 = 1.500,0.46087137,0.692881,2.15%,2.86%,3.478%,1.41,Non-convergent,"Apparent order (absolute-value formula): 1.413645
-Numerical GCI and extrapolation only: this grid sequence does not support a positive-order convergence model, so GCI is not a validated uncertainty estimate. Absolute changes: coarse→medium=0.00862365, medium→fine=0.0153487."
+Inlet Darcy friction factor,coarse,7200,12.909944487358056,0.03111235253297541,,1.72112602037,,,,,,,Apparent order (absolute-value formula): 2.750123
+Inlet Darcy friction factor,medium,16033,8.651336942131952,0.027733422516848617,r_21 = 1.492,1.07570561364,0.026050,12.18%,6.46%,7.589%,,,Apparent order (absolute-value formula): 2.750123
+Inlet Darcy friction factor,fine,36000,5.773502691896258,0.026603250989550953,r_32 = 1.498,0.686086560998,0.026050,4.25%,2.13%,2.602%,2.75,Monotonic convergence,Apparent order (absolute-value formula): 2.750123
+Contraction loss coefficient K,coarse,7200,12.909944487358056,0.5862047647934676,,1.72112602037,,,,,,,GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable.
+Contraction loss coefficient K,medium,16033,8.651336942131952,0.6072155955734893,r_21 = 1.492,1.07570561364,N/A,3.46%,N/A,N/A,,,GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable.
+Contraction loss coefficient K,fine,36000,5.773502691896258,0.597853782576224,r_32 = 1.498,0.686086560998,N/A,1.57%,N/A,N/A,N/A,Oscillatory,GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable.
