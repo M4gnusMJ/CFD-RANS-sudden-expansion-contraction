@@ -50,6 +50,6 @@
       "wall_radius": 0.09993908270190958
     }
   },
-  "solution_time": "135",
+  "solution_time": "131",
   "source_case": "/home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/run_fine"
 }

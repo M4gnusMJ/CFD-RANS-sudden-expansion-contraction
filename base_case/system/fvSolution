@@ -22,8 +22,10 @@ solvers
     {
         solver          PCG;
         preconditioner  DIC;
+        //solver              GAMG;
+        //smoother        GaussSeidel;
         tolerance       1e-08;
-        relTol          0.01;
+        relTol          0.0001; // Set rel tol to 0 due to oscillations preventing convergence
     }
 
     "(U|k|epsilon|omega|f|v2)"
@@ -46,20 +48,24 @@ SIMPLE
     // remain large. Do not loosen the whole U threshold to accommodate it.
     residualControl
     {
-        p               1e-3;
+        p               2e-2; // Increased to 3 e-3, as it would not converge otherwise
         U               2e-4;
         "(k|epsilon|omega|f|v2)" 5e-5;
     }
 }
 
 relaxationFactors
-{
+{   
+    fields 
+    {
+        p               0.8;
+    }
     // Lowered from 0.9. Slower per iteration but far less likely to tip into
     // the limit cycle the first attempt got stuck in.
     equations
     {
-        U               0.7;
-        ".*"            0.7;
+        U               0.6;
+        ".*"            0.6;
     }
 }
 

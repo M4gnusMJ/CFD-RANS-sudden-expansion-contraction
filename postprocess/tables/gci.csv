@@ -1,7 +1,7 @@
 indicator,mesh,n,h [mm],phi = X_n,r,yPlus med.,phi_ext,e_a,e_ext,GCI fine,p,grid trend,status
-Inlet Darcy friction factor,coarse,7200,12.909944487358056,0.03111235253297541,,1.72112602037,,,,,,,Apparent order (absolute-value formula): 2.750123
-Inlet Darcy friction factor,medium,16033,8.651336942131952,0.027733422516848617,r_21 = 1.492,1.07570561364,0.026050,12.18%,6.46%,7.589%,,,Apparent order (absolute-value formula): 2.750123
-Inlet Darcy friction factor,fine,36000,5.773502691896258,0.026603250989550953,r_32 = 1.498,0.686086560998,0.026050,4.25%,2.13%,2.602%,2.75,Monotonic convergence,Apparent order (absolute-value formula): 2.750123
-Contraction loss coefficient K,coarse,7200,12.909944487358056,0.5862047647934676,,1.72112602037,,,,,,,GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable.
-Contraction loss coefficient K,medium,16033,8.651336942131952,0.6072155955734893,r_21 = 1.492,1.07570561364,N/A,3.46%,N/A,N/A,,,GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable.
-Contraction loss coefficient K,fine,36000,5.773502691896258,0.597853782576224,r_32 = 1.498,0.686086560998,N/A,1.57%,N/A,N/A,N/A,Oscillatory,GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable.
+Inlet Darcy friction factor,coarse,34720,5.878963512522154,0.02724911513272515,,1.11250787074,,,,,,,Apparent order (absolute-value formula): 0.942243
+Inlet Darcy friction factor,medium,78120,3.919309008348103,0.0266725472268005,r_21 = 1.500,0.7159451507145,0.025433,2.16%,4.87%,5.807%,,,Apparent order (absolute-value formula): 0.942243
+Inlet Darcy friction factor,fine,175770,2.6128726722320685,0.02627906089068904,r_32 = 1.500,0.47324902847,0.025433,1.50%,3.33%,4.023%,0.94,Monotonic convergence,Apparent order (absolute-value formula): 0.942243
+Contraction loss coefficient K,coarse,34720,5.878963512522154,0.8641178361690742,,1.11250787074,,,,,,,Apparent order (absolute-value formula): 0.521188
+Contraction loss coefficient K,medium,78120,3.919309008348103,0.8394416193297758,r_21 = 1.500,0.7159451507145,0.734576,2.94%,14.28%,15.615%,,,Apparent order (absolute-value formula): 0.521188
+Contraction loss coefficient K,fine,175770,2.6128726722320685,0.8194659205207273,r_32 = 1.500,0.47324902847,0.734576,2.44%,11.56%,12.949%,0.52,Monotonic convergence,Apparent order (absolute-value formula): 0.521188

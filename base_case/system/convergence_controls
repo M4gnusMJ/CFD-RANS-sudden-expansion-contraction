@@ -11,7 +11,7 @@ componentConvergence
         {
             type equationInitialResidual;
             fields (p);
-            value 1e-3;
+            value 2e-2;
             mode minimum;
             groupID 1;
         }

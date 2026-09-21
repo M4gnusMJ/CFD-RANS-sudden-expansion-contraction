@@ -1,5 +1,3 @@
-/home/magnus/.config/matplotlib is not a writable directory
-Matplotlib created a temporary cache directory at /tmp/matplotlib-o0jm1qmg because there was an issue with the default path (/home/magnus/.config/matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
 Run data: /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/data
 Both indicators use axis CSVs; y+ medians use wall CSVs.
 Mesh counts and geometry: case_design/case_params.json
@@ -8,23 +6,23 @@ GCI fine refers to the finer mesh in each pair (rows 2 and 3).
 
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Indicator: Inlet Darcy friction factor
-Apparent order (absolute-value formula): 2.750123
-  mesh     n   h [mm] phi = X_n            r yPlus med.  phi_ext    e_a e_ext GCI fine    p            grid trend
-coarse  7200 12.90994  0.031112                    1.72                                                          
-medium 16033  8.65134  0.027733 r_21 = 1.492       1.08 0.026050 12.18% 6.46%   7.589%                           
-  fine 36000  5.77350  0.026603 r_32 = 1.498       0.69 0.026050  4.25% 2.13%   2.602% 2.75 Monotonic convergence
+Apparent order (absolute-value formula): 0.942243
+  mesh      n  h [mm] phi = X_n            r yPlus med.  phi_ext   e_a e_ext GCI fine    p            grid trend
+coarse  34720 5.87896  0.027249                    1.11                                                         
+medium  78120 3.91931  0.026673 r_21 = 1.500       0.72 0.025433 2.16% 4.87%   5.807%                           
+  fine 175770 2.61287  0.026279 r_32 = 1.500       0.47 0.025433 1.50% 3.33%   4.023% 0.94 Monotonic convergence
 
 ──────────────────────────────────────────────────────────────────────────────────────────────────────────────
 Indicator: Contraction loss coefficient K
-GCI unavailable: oscillatory grid sequence; monotonic extrapolation is not applicable.
-  mesh     n   h [mm] phi = X_n            r yPlus med. phi_ext   e_a e_ext GCI fine   p  grid trend
-coarse  7200 12.90994  0.586205                    1.72                                             
-medium 16033  8.65134  0.607216 r_21 = 1.492       1.08     N/A 3.46%   N/A      N/A                
-  fine 36000  5.77350  0.597854 r_32 = 1.498       0.69     N/A 1.57%   N/A      N/A N/A Oscillatory
+Apparent order (absolute-value formula): 0.521188
+  mesh      n  h [mm] phi = X_n            r yPlus med.  phi_ext   e_a  e_ext GCI fine    p            grid trend
+coarse  34720 5.87896  0.864118                    1.11                                                          
+medium  78120 3.91931  0.839442 r_21 = 1.500       0.72 0.734576 2.94% 14.28%  15.615%                           
+  fine 175770 2.61287  0.819466 r_32 = 1.500       0.47 0.734576 2.44% 11.56%  12.949% 0.52 Monotonic convergence
 Saved /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/tables/gci.csv
 Saved /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/tables/pressure_gci.csv
-Pressure local order: 0.290368 to 3.396225; average = 1.611554 (1200/1200 points)
+Pressure local order: 0.668887 to 3.314439; average = 1.012634 (1200/1200 points)
 Pressure grid trends: {'Monotonic convergence': 1200}
-Maximum absolute pressure GCI: 0.356832 m2/s2
+Maximum absolute pressure GCI: 0.319463 m2/s2
 Profile bars use the mean order; they do not establish local convergence.
 Saved /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/figs/pressure_gci.png

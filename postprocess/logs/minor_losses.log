@@ -1,12 +1,10 @@
-/home/magnus/.config/matplotlib is not a writable directory
-Matplotlib created a temporary cache directory at /tmp/matplotlib-w3ij6093 because there was an issue with the default path (/home/magnus/.config/matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
 K uses small-pipe bulk velocity; alpha = 1; pressures extrapolated to the step.
 mesh     step          x [m]   dp/rho [m²/s²]   K simulation   K analytical
-coarse   expansion      3.00         0.789611       0.542694       0.562500
-coarse   contraction   12.00        -3.047410       0.586205       0.375000
-medium   expansion      3.00         0.790931       0.542035       0.562500
-medium   contraction   12.00        -3.089431       0.607216       0.375000
-fine     expansion      3.00         0.779047       0.547976       0.562500
-fine     contraction   12.00        -3.070708       0.597854       0.375000
+coarse   expansion      3.00         0.790641       0.542180       0.562500
+coarse   contraction   12.00        -3.603236       0.864118       0.375000
+medium   expansion      3.00         0.787216       0.543892       0.562500
+medium   contraction   12.00        -3.553883       0.839442       0.375000
+fine     expansion      3.00         0.784014       0.545493       0.562500
+fine     contraction   12.00        -3.513932       0.819466       0.375000
 Saved /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/tables/minor_losses.csv
 Saved /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/figs/minor_losses.png

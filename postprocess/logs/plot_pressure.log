@@ -1,37 +1,35 @@
-/home/magnus/.config/matplotlib is not a writable directory
-Matplotlib created a temporary cache directory at /tmp/matplotlib-qe0gzh47 because there was an issue with the default path (/home/magnus/.config/matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
 Group 22 - post-processing
 ====================================================
 parameters: d1=0.1 d2=0.2 Re1=20000.0 steps at x=3.0 and x=12.0  (case_params.json)
 analytical curve: 900 points calculated, alpha=1.05, outlet p/rho=0
 
 coarse:
-  dp/rho across expansion   = +0.78961 m2/s2   (analytical +0.84375)
-  dp/rho across contraction = -3.04741 m2/s2   (analytical -2.71875)
+  dp/rho across expansion   = +0.79064 m2/s2   (analytical +0.84375)
+  dp/rho across contraction = -3.60324 m2/s2   (analytical -2.71875)
   fit windows, expansion    1.80-2.69 m  and  4.00-11.40 m
   fit windows, contraction  4.00-11.40 m  and  13.01-14.70 m
-  f1 from measured slope    = 0.03111        (Haaland 0.02575)
-  y+ range                  = 0.039 .. 19.512   (must stay <~ 1)
+  f1 from measured slope    = 0.02725        (Haaland 0.02575)
+  y+ range                  = 0.008 .. 16.423   (must stay <~ 1)
 
 medium:
-  dp/rho across expansion   = +0.79093 m2/s2   (analytical +0.84375)
-  dp/rho across contraction = -3.08943 m2/s2   (analytical -2.71875)
+  dp/rho across expansion   = +0.78722 m2/s2   (analytical +0.84375)
+  dp/rho across contraction = -3.55388 m2/s2   (analytical -2.71875)
   fit windows, expansion    1.80-2.69 m  and  4.00-11.40 m
   fit windows, contraction  4.00-11.40 m  and  13.01-14.70 m
-  f1 from measured slope    = 0.02773        (Haaland 0.02575)
-  y+ range                  = 0.007 .. 16.499   (must stay <~ 1)
+  f1 from measured slope    = 0.02667        (Haaland 0.02575)
+  y+ range                  = 0.006 .. 13.849   (must stay <~ 1)
 
 fine:
-  dp/rho across expansion   = +0.77905 m2/s2   (analytical +0.84375)
-  dp/rho across contraction = -3.07071 m2/s2   (analytical -2.71875)
+  dp/rho across expansion   = +0.78401 m2/s2   (analytical +0.84375)
+  dp/rho across contraction = -3.51393 m2/s2   (analytical -2.71875)
   fit windows, expansion    1.80-2.69 m  and  4.00-11.40 m
   fit windows, contraction  4.00-11.40 m  and  13.01-14.70 m
-  f1 from measured slope    = 0.02660        (Haaland 0.02575)
-  y+ range                  = 0.006 .. 13.967   (must stay <~ 1)
+  f1 from measured slope    = 0.02628        (Haaland 0.02575)
+  y+ range                  = 0.002 .. 11.684   (must stay <~ 1)
 
 All three levels present -> feed these into gci.py:
-  contraction: fine=-3.07071, medium=-3.08943, coarse=-3.04741
-  expansion:   fine=0.77905, medium=0.79093, coarse=0.78961
+  contraction: fine=-3.51393, medium=-3.55388, coarse=-3.60324
+  expansion:   fine=0.78401, medium=0.78722, coarse=0.79064
 Wrote /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/figs/pressure_bernoulli_comparison.png
 
 Wrote pressure_comparison.png
