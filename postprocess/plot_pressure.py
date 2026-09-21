@@ -25,6 +25,8 @@ import json
 import os
 import sys
 
+from bernoulli_baseline import pressure_profile
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
 
@@ -126,10 +128,22 @@ def extract_dp(axis):
 
 
 def main():
-    analytical = read_csv(os.path.join(HERE, "..", "case_design",
-                                       "analytical_pressure.csv"))
-    if analytical is None:
-        analytical = read_csv(os.path.join(HERE, "analytical_pressure.csv"))
+    if not _PARAMS_OK:
+        raise ValueError("Generate case_design/case_params.json before plotting.")
+    analytical = list(zip(*pressure_profile(P)))
+    analytical_jumps = {
+        x_right: p_right - p_left
+        for (x_left, p_left), (x_right, p_right) in zip(analytical, analytical[1:])
+        if x_left == x_right
+    }
+    tables_dir = os.path.join(HERE, "tables")
+    figures_dir = os.path.join(HERE, "figs")
+    os.makedirs(tables_dir, exist_ok=True)
+    os.makedirs(figures_dir, exist_ok=True)
+    with open(os.path.join(tables_dir, "bernoulli_baseline.csv"), "w", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["x_m", "p_over_rho_m2_s2"])
+        writer.writerows(analytical)
 
     found = {}
     for lv in LEVELS:
@@ -147,7 +161,7 @@ def main():
         print("WARNING: case_design/case_params.json not found - using fallback")
         print("         geometry. Run case_design.py so these stay in sync.")
     if analytical:
-        print(f"analytical curve: {len(analytical)} points loaded")
+        print(f"analytical curve: {len(analytical)} points calculated, alpha=1.05, outlet p/rho=0")
     else:
         print("analytical curve: NOT FOUND (run case_design.py first)")
     if not found:
@@ -165,10 +179,10 @@ def main():
         print(f"\n{lv}:")
         if "expansion" in r:
             print(f"  dp/rho across expansion   = {r['expansion']:+.5f} m2/s2"
-                  f"   (analytical {P['dp_exp']:+.5f})")
+                  f"   (analytical {analytical_jumps[X_EXP]:+.5f})")
         if "contraction" in r:
             print(f"  dp/rho across contraction = {r['contraction']:+.5f} m2/s2"
-                  f"   (analytical {P['dp_con']:+.5f})")
+                  f"   (analytical {analytical_jumps[X_CON]:+.5f})")
         for nm, w in r.get("windows", {}).items():
             print(f"  fit windows, {nm:<12} {w[0]:.2f}-{w[1]:.2f} m  and  "
                   f"{w[2]:.2f}-{w[3]:.2f} m")
@@ -194,8 +208,27 @@ def main():
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
-        print("\nmatplotlib missing - numbers above are still valid.")
-        return
+        raise RuntimeError("matplotlib is required to generate the pressure plots")
+
+    comparison, pressure_ax = plt.subplots(figsize=(9, 5))
+    pressure_ax.plot(*zip(*analytical), "k--", lw=2,
+                     label=r"Bernoulli + losses ($\alpha=1.05$)")
+    for lv, d in found.items():
+        if d["axis"]:
+            pressure_ax.plot(*zip(*d["axis"]), color=COLORS[lv], lw=1.6,
+                             label=f"simpleFoam, {lv}")
+    for step in (X_EXP, X_CON):
+        pressure_ax.axvline(step, color="0.5", ls="--", lw=1)
+    pressure_ax.set(xlabel="Axial position x [m]",
+                    ylabel=r"Kinematic pressure $p/\rho$ [m$^2$/s$^2$]",
+                    title="Analytical pressure distribution compared to CFD")
+    pressure_ax.grid(alpha=0.3)
+    pressure_ax.legend(frameon=False)
+    comparison.tight_layout()
+    comparison_path = os.path.join(figures_dir, "pressure_bernoulli_comparison.png")
+    comparison.savefig(comparison_path, dpi=160)
+    plt.close(comparison)
+    print(f"Wrote {comparison_path}")
 
     nplots = 2 if any(d.get("yplus") for d in found.values()) else 1
     fig, axes = plt.subplots(nplots, 1, figsize=(10, 5 * nplots), squeeze=False)
@@ -203,7 +236,7 @@ def main():
 
     if analytical:
         ax.plot([p[0] for p in analytical], [p[1] for p in analytical],
-                "k--", lw=1.6, label="Bernoulli with losses", zorder=5)
+                "k--", lw=1.6, label=r"Bernoulli with losses ($\alpha=1.05$)", zorder=5)
     for lv, d in found.items():
         if d["axis"]:
             ax.plot([p[0] for p in d["axis"]], [p[1] for p in d["axis"]],

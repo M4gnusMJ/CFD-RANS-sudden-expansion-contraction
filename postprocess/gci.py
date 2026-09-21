@@ -15,6 +15,7 @@ from scipy.optimize import root_scalar
 
 from plot_pressure import extract_dp, read_csv
 from minor_losses import calculate_losses
+from bernoulli_baseline import pressure_profile
 
 
 HERE = Path(__file__).resolve().parent
@@ -247,6 +248,10 @@ def plot_pressure_gci(table, figures_dir):
     indices = np.unique(np.r_[np.linspace(0, len(x) - 1, min(65, len(x)), dtype=int),
                               np.argmax(uncertainty)])
     fig, ax = plt.subplots(figsize=(11, 5.5))
+    with (HERE.parent / "case_design" / "case_params.json").open() as stream:
+        baseline_x, baseline_p = pressure_profile(json.load(stream))
+    ax.plot(baseline_x, baseline_p, "k--", lw=1.8,
+            label=r"Bernoulli + losses ($\alpha=1.05$)")
     ax.plot(x, table["p_coarse/rho [m2/s2]"], color="#999999", lw=1,
             linestyle=":", label="Coarse")
     ax.plot(x, table["p_medium/rho [m2/s2]"], color="#e69f00", lw=1,

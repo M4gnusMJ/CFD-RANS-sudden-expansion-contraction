@@ -12,3 +12,9 @@ All planned checks executed. No solver rerun performed. Experimental/DNS validat
 - R4 verified: actual mesh and parallel integration checks, documentation; owner root.
 
 R1–R4 evidence: [VERIFICATION.md](VERIFICATION.md), mesh/parallel/convergence section.
+
+- M1 verified: revise generator and regenerate family; owner root; acceptance GOAL M.
+- M2 verified: isolated blockMesh/renumber/checkMesh, spacing and refinement checks; owner root; depends M1.
+- M3 verified: document grading and results; owner root; depends M2.
+
+M1–M3 evidence: VERIFICATION.md, physics-focused mesh revision. Standard quality/spacing pass; optional determinant warning persists; solution accuracy requires reruns.

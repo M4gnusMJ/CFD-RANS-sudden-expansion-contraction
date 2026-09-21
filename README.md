@@ -22,10 +22,44 @@ Plain Python, outside the container:
 python3 case_design/case_design.py
 ```
 
-Writes `blockMeshDict.coarse/.medium/.fine` (7,200 / 16,033 / 36,000 cells),
+Writes `blockMeshDict.coarse/.medium/.fine` (34,720 / 78,120 / 175,770 cells),
 `design_summary.txt` with every parameter and where it comes from,
 `analytical_pressure.csv/.png`, `case_params.json`, and
 `base_case/0/include/initialConditions` (inlet U, k, epsilon, omega).
+
+The coarse mesh targets developed-wall y+ = 1, then 0.67 and 0.44.
+Every axial/radial count scales by 1.5; total counts scale by 2.25 because
+the wedge retains one circumferential cell. These are design estimates:
+check measured y+ after solving.
+
+The grading keeps small cells at each lip but relaxes the old-radius internal
+interface from 0.176 mm at the lips to 1 mm in the developed middle (coarse).
+The outer-wall first-cell height stays 0.644 mm throughout the enlarged pipe.
+Two additional axial planes, 20 step heights after expansion and before
+contraction, allow this redistribution without changing the pipe geometry.
+There are 32 cells across the small-pipe radius and 40 across the annulus on
+coarse; the downstream small pipe remains resolved across its full radius.
+
+How the helpers work:
+- `grading_one_sided`: choose the end-cell size; solve for gradual growth
+  that fills the length.
+- `grading_two_sided`: choose both end-cell sizes; join the two sequences
+  at the same largest cell width, avoiding a jump in the middle.
+- `grading_with_uniform_middle`: graded ends join a uniform middle with
+  matching widths.
+- `edgeGrading`: lets radial spacing change gradually between axial planes.
+  Its ratios describe the last cell divided by the first, not growth per cell.
+  See the [OpenFOAM blockMesh guide](https://www.openfoam.com/documentation/user-guide/4-mesh-generation-and-conversion/4.3-mesh-generation-with-the-blockmesh-utility).
+
+All three revised meshes pass standard `checkMesh`: max aspect ratio about
+333, max nonorthogonality below 0.81 degrees, max skewness 0.332.
+Measured maximum neighboring-cell growth on coarse is 15.8% radially and
+2.8% axially. The extra `-allGeometry` determinant check still flags thin
+cells; the previous mesh also fails that check. This is not a claim that
+every optional quality check passes or that minor-loss accuracy is established.
+
+Regenerate **all three simulation datasets** before using GCI with the new
+mesh-count metadata. Generating dictionaries does not change existing runs.
 
 ## 2. Run the simulations
 
@@ -61,12 +95,6 @@ For each level `Allrun.sh`:
 
 If a step fails it stops there and prints the last 25 lines of that log, so
 the error is on screen; the full log stays in `run_<level>/`.
-
-The current medium resolution became the new fine level. Refinement remains
-approximately 1.5 in the axial and radial directions. The expanded section now
-uses graded ends and a uniform central segment to limit axial stretching;
-checked maximum aspect ratios are approximately 467 / 468 / 472. Rerun all three
-levels before using GCI with the new cell counts.
 
 The iteration cap is 100,000. Reaching it without convergence makes `Allrun.sh`
 fail before reconstruction/export or advancing to the next level. Existing
@@ -107,13 +135,26 @@ ends the comment early and OpenFOAM chokes on the rest.
 Back outside the container:
 
 ```bash
-python3 postprocess/plot_pressure.py
-python3 postprocess/gci.py
+sh Allpostprocess.sh
 ```
 
+`Allrun.sh` also runs this suite after exporting the simulations. It runs
+`plot_pressure.py`, `minor_losses.py`, `velocity_profiles.py` and `gci.py`,
+reports each result and keeps logs in `postprocess/logs/`. A failed script does
+not prevent the remaining scripts from running; the suite returns failure if
+any script fails. Sampling is performed by `Allrun.sh` before this analysis;
+`Allpostprocess.sh` uses the existing CSV exports without rerunning the solver.
+
 `plot_pressure.py` reads `postprocess/data/<level>_axis.csv`, compares the
-three levels against `analytical_pressure.csv` and extracts the pressure
-drops. `gci.py` loads the three axis CSVs directly and uses the same pressure-slope
+three levels on one plot against an outlet-anchored Bernoulli baseline and
+extracts the pressure drops. The dedicated comparison is
+`postprocess/figs/pressure_bernoulli_comparison.png`, with the baseline saved to
+`postprocess/tables/bernoulli_baseline.csv`. Geometry and flow properties come
+from `case_design/case_params.json`; the baseline uses Haaland friction, smooth
+walls, alpha=1.05, contraction prefactor 0.5 and zero outlet kinematic pressure.
+Both step losses reference the smaller-pipe velocity. The existing combined
+pressure/y+ figure remains at `postprocess/pressure_comparison.png`.
+`gci.py` loads the three axis CSVs directly and uses the same pressure-slope
 fit to calculate the inlet Darcy friction factor on each mesh. It reads median
 y+ from the corresponding yplus CSVs and cell counts and geometry from
 `case_design/case_params.json`. A second table uses the contraction loss

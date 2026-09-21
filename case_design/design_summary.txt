@@ -29,7 +29,7 @@ Friction, wall units, first cell
   y(y+=1), small pipe     = 8.813e-05 m -> first cell height 1.763e-04 m
   y(y+=1), large pipe     = 3.219e-04 m -> first cell height 6.438e-04 m
   NOTE: with a low-Re model the first cell must stay in the viscous sublayer
-        on ALL three meshes. The coarser family targets y+ = 1.50 -> 1.00 -> 0.67,
+        on ALL three meshes. This family targets y+ = 1.00 -> 0.67 -> 0.44,
         which is still valid. With wall functions the same refinement would
         walk out of the 30 < y+ < 300 band, which is why the GCI study forces
         the low-Re / resolved-boundary-layer choice.
@@ -58,8 +58,8 @@ Minor losses (Cengel & Cimbala Table 8-4)
 Meshes (systematic refinement r = 1.5)
 --------------------------------------
   level    cells    n_ax1 n_ax2 n_ax3 n_r  n_ann   y+_wall(small pipe)
-  coarse   7200     89    111   89    18   18     1.500
-  medium   16033    133   167   133   27   26     1.000
-  fine     36000    200   250   200   40   40     0.667
+  coarse   34720    160   340   160   32   40     1.000
+  medium   78120    240   510   240   48   60     0.667
+  fine     175770   360   765   360   72   90     0.444
   -> blockMeshDict.coarse / .medium / .fine written next to this script.
   -> run checkMesh on each; max non-orthogonality and skewness must pass.

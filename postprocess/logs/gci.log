@@ -1,3 +1,5 @@
+/home/magnus/.config/matplotlib is not a writable directory
+Matplotlib created a temporary cache directory at /tmp/matplotlib-o0jm1qmg because there was an issue with the default path (/home/magnus/.config/matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
 Run data: /home/magnus/OpenFOAM/magnus-v2412/run/assignment_3_expansion_contraction/postprocess/data
 Both indicators use axis CSVs; y+ medians use wall CSVs.
 Mesh counts and geometry: case_design/case_params.json

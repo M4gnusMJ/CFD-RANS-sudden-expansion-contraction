@@ -52,3 +52,25 @@ Scope: duplicate yPlus and wallShearStress registrations introduced by the diagn
 - R4 passed: test-only Ux threshold -1 while all other thresholds2, endTime4. Allrun exits1 at the cap, without accepting the other five satisfied conditions, reconstructing or exporting. Existing test CSV hashes unchanged. log.rejection-test records failure as expected.
 - Passed: shell syntax, scoped diff hygiene, generated cell counts vs metadata, eight partitions per level, six exported profiles and synchronized solution time3.
 - Production residual thresholds, same group structure: p1e-3, Ux/Uy2e-4, Uz.02, k/epsilon5e-5; strict standard SIMPLE criteria retained; iteration cap100000. Full production convergence/runtime speedup not verified. Existing production runs/data preserved; all meshes must be rerun before GCI using the updated metadata.
+
+## M1–M3: physics-focused mesh revision
+
+Tested in repository cwd, OpenFOAM v2412, dirty workspace; pre-existing plotting/workflow edits preserved.
+Generator SHA256 883412ebcb0379191d2fb0a93e6d2ddab68c78a587d6673c07290a2b258ad59e.
+Dictionary hashes coarse/medium/fine:
+2f3a74413f2324205108a60e88f47921a712aba42f6cde78b68e2ee5bc0ce52e,
+ce066f1facd113c00b73e5f32fb4906df2790675d8bce7e426ec14e9e256a0c2,
+2d7e23807ad498c8810761b1d6c3e17a412b01df0e532a78fa2895c3f579ff8d.
+
+| Criterion | Executed check / actual evidence | Verdict |
+|---|---|---|
+| Family and wall targets | Ran generator; metadata counts34720/78120/175770, targets1/.667/.444. Asserted sqrt count ratios1.5 and target ratios1.5. Generated dictionaries byte-identical to tested copies after final helper validation edits. | passed |
+| Actual mesh connectivity and standard quality | In temporary copies: blockMesh, renumberMesh -overwrite, checkMesh for all3. All report Mesh OK. Max aspects332.423/332.855/333.142, nonorthogonality.802/.799/.797deg, skewness.332. | passed |
+| Smooth redistribution and interface matching | /tmp/check_mesh_spacing.py reads actual generated points: coarse maximum adjacent radial factor1.15824, axial1.02827; refined levels lower. At x3/12 interface widths match .1762655mm, at x4/11 both1mm. Large-pipe wall height .6437581mm constant; all prescribed spacings scale by1.5. | passed |
+| Visual layout | Opened /tmp/physics-mesh-46zuikzd/mesh_comparison.png from actual meshes. Checked lip clustering relaxes, outer wall stays refined, and broad step regions have axial resolution. | passed |
+| Optional allGeometry determinant check | checkMesh -allGeometry -allTopology: small determinant warning on all3 (986/2264/5071cells). Previous coarse from HEAD also fails (999cells). New coarse min1.4233e-5 vs old1.0726e-5. No hidden threshold relaxation. | failed |
+| Improved losses and measured y+ | No production solve; requires converged reruns of entire family. | not verified |
+
+Logs and spacing report: /tmp/physics-mesh-46zuikzd/{coarse,medium,fine,previous-coarse}/log.*, spacing.txt and design.log.
+Scoped git diff --check passes. Geometry, turbulence model, solver settings, production runs and datasets preserved.
+The requested mesh revision is delivered with standard checks passing; optional determinant warning remains explicit, and no solution-accuracy claim is made.

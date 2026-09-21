@@ -123,10 +123,4 @@ done
 
 echo
 echo "=================== postprocessing ==================="
-mkdir -p postprocess/logs
-for SCRIPT in plot_pressure minor_losses velocity_profiles gci; do
-    echo "  $SCRIPT..."
-    python3 "postprocess/$SCRIPT.py" > "postprocess/logs/$SCRIPT.log" 2>&1 \
-        || die "$SCRIPT" "postprocess/logs/$SCRIPT.log"
-done
-echo "Done. Postprocessing logs: postprocess/logs/"
+sh ./Allpostprocess.sh || exit 1

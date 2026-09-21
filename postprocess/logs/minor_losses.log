@@ -1,3 +1,5 @@
+/home/magnus/.config/matplotlib is not a writable directory
+Matplotlib created a temporary cache directory at /tmp/matplotlib-w3ij6093 because there was an issue with the default path (/home/magnus/.config/matplotlib); it is highly recommended to set the MPLCONFIGDIR environment variable to a writable directory, in particular to speed up the import of Matplotlib and to better support multiprocessing.
 K uses small-pipe bulk velocity; alpha = 1; pressures extrapolated to the step.
 mesh     step          x [m]   dp/rho [m²/s²]   K simulation   K analytical
 coarse   expansion      3.00         0.789611       0.542694       0.562500

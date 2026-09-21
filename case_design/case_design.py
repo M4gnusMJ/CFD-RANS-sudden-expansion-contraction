@@ -145,8 +145,14 @@ omega_inlet = eps_inlet / (Cmu * k_inlet)
 def expansion_k(L, n, d_small, lo=1.0 + 1e-9, hi=1.5):
     """Per-cell growth factor k of a geometric distribution of n cells over length L
     whose smallest cell has size d_small.  Solves d_small (k^n - 1)/(k - 1) = L."""
-    if n * d_small >= L:
+    if n < 2 or L <= 0 or d_small <= 0:
+        raise ValueError("Grading needs positive sizes and at least two cells")
+    if math.isclose(n * d_small, L, rel_tol=1e-12):
         return 1.0
+    if n * d_small > L:
+        raise ValueError("Requested smallest cell exceeds the uniform cell size")
+    if d_small * (hi**n - 1) / (hi - 1) < L:
+        raise ValueError("Too few cells: increase the count to reduce stretching")
     for _ in range(300):
         k = 0.5 * (lo + hi)
         s = d_small * (k ** n - 1.0) / (k - 1.0) if k > 1.0 + 1e-12 else d_small * n
@@ -165,15 +171,32 @@ def grading_one_sided(L, n, d_small, fine_at_start):
 
 
 def grading_two_sided(L, n, d_start, d_end):
-    """Multi-grading string: fine at both ends of the block."""
-    nh = max(2, n // 2)
-    R1 = expansion_k(L / 2.0, nh, d_start) ** (nh - 1)
-    R2 = expansion_k(L / 2.0, nh, d_end) ** (nh - 1)
-    return "( (0.5 0.5 %.5f) (0.5 0.5 %.5f) )" % (R1, 1.0 / R2)
+    """Fine at both ends, with matching cell widths at the internal join.
 
+    Split the cell count evenly, then find the common largest cell that makes
+    the two geometric sequences fill L. The length fractions follow from that
+    calculation; they need not be half and half.
+    """
+    n_left, n_right = n // 2, n - n // 2
 
-def first_cell_one_sided(L, n, d_small):
-    return d_small
+    def length(d_peak, count, d_edge):
+        return sum(d_edge * (d_peak / d_edge) ** (i / (count - 1))
+                   for i in range(count))
+
+    lo, hi = max(d_start, d_end), L
+    if length(lo, n_left, d_start) + length(lo, n_right, d_end) > L:
+        raise ValueError("Too many cells for the requested two-sided end sizes")
+    for _ in range(80):
+        peak = (lo + hi) / 2
+        if length(peak, n_left, d_start) + length(peak, n_right, d_end) < L:
+            lo = peak
+        else:
+            hi = peak
+    peak = (lo + hi) / 2
+    fraction = length(peak, n_left, d_start) / L
+    return ("( (%.12g %.12g %.12g) (%.12g %.12g %.12g) )"
+            % (fraction, n_left / n, peak / d_start,
+               1 - fraction, n_right / n, d_end / peak))
 
 
 def grading_with_uniform_middle(L, n, d_small):
@@ -232,113 +255,110 @@ convertToMeters 1;
 
 def write_blockmeshdict(path, level_name, n_ax1, n_ax2, n_ax3, n_r_core, n_r_ann,
                         dx_fine, dr_wall1, dr_wall2):
+    """Same wedge geometry; two extra axial planes let internal grading relax.
+
+    At each lip the radial distribution matches the small pipe exactly.
+    Over 20 step heights it changes smoothly to a broadly resolved core.
+    edgeGrading specifies radial spacing independently at the two block ends;
+    both wedge faces get identical grading.
+    """
     th = math.radians(half_angle_deg)
     c, s = math.cos(th), math.sin(th)
-
-    xs = [0.0, x_exp, x_con, Ltot]
+    development = 20 * h_step
+    if L2 <= 2 * development:
+        raise ValueError("Expanded section must exceed two 20h transition regions")
+    xs = [0.0, x_exp, x_exp + development,
+          x_con - development, x_con, Ltot]
     verts = []
-    for x in xs:                                   # 0..11 : core pipe, r = r1
-        verts.append((x, 0.0, 0.0))                # 3i   axis
-        verts.append((x, r1 * c,  r1 * s))         # 3i+1 front (+z)
-        verts.append((x, r1 * c, -r1 * s))         # 3i+2 back  (-z)
-    verts.append((x_exp, r2 * c,  r2 * s))         # 12
-    verts.append((x_exp, r2 * c, -r2 * s))         # 13
-    verts.append((x_con, r2 * c,  r2 * s))         # 14
-    verts.append((x_con, r2 * c, -r2 * s))         # 15
+    for x in xs:
+        verts.extend([(x, 0, 0), (x, r1*c, r1*s), (x, r1*c, -r1*s)])
+    outer = {}
+    for i in range(1, 5):
+        outer[i] = len(verts)
+        verts.extend([(xs[i], r2*c, r2*s), (xs[i], r2*c, -r2*s)])
 
-    # gradings
-    gx1 = grading_one_sided(L1, n_ax1, dx_fine, fine_at_start=False)   # fine at expansion
-    gx2 = grading_with_uniform_middle(L2, n_ax2, dx_fine)             # fine at steps, capped middle
-    gx3 = grading_one_sided(L3, n_ax3, dx_fine, fine_at_start=True)    # fine at contraction
-    gr_core = grading_one_sided(r1, n_r_core, dr_wall1, fine_at_start=False)
-    # Bottom of the annulus is the shear layer off the step, NOT a wall, and it
-    # does not have to match the core block: the shared face r = r1 is indexed
-    # axially. Targeting the wall scale here forced expansion ratios > 1.4 and
-    # made the grading differ between mesh levels, which breaks the systematic
-    # refinement a GCI study needs. Use the shear-layer scale instead.
-    gr_ann = grading_two_sided(r2 - r1, n_r_ann, dx_fine, dr_wall2)
+    # 100 / 140 / 100 coarse axial cells: more resolution throughout the
+    # separated-flow regions, fewer cells per metre in the developed middle.
+    n_end = round(n_ax2 * 100 / 340)
+    n_mid = n_ax2 - 2 * n_end
+    end_ratio = grading_one_sided(development, n_end, dx_fine, True)
+    dx_middle_edge = dx_fine * end_ratio
+    gx = [
+        "%.12g" % grading_one_sided(L1, n_ax1, dx_fine, False),
+        "%.12g" % end_ratio,
+        grading_with_uniform_middle(L2 - 2*development, n_mid, dx_middle_edge),
+        "%.12g" % (1 / end_ratio),
+        "%.12g" % grading_one_sided(L3, n_ax3, dx_fine, True),
+    ]
+    nx = [n_ax1, n_end, n_mid, n_end, n_ax3]
+    # Relax the internal interface to 1 mm on coarse, refined proportionally.
+    # This is a shear-layer spacing, not a first-cell wall height.
+    dr_interface = 0.001 * dx_fine / 0.003
+    core_lip = "%.12g" % grading_one_sided(r1, n_r_core, dr_wall1, False)
+    core_middle = "%.12g" % grading_one_sided(r1, n_r_core, dr_interface, False)
+    core = [core_lip, core_lip, core_middle, core_middle, core_lip, core_lip]
+    ann_lip = grading_two_sided(r2-r1, n_r_ann, dr_wall1, dr_wall2)
+    ann_middle = grading_two_sided(r2-r1, n_r_ann, dr_interface, dr_wall2)
+    ann = {1: ann_lip, 2: ann_middle, 3: ann_middle, 4: ann_lip}
 
     lines = [HEADER % level_name, "vertices\n(\n"]
     for v in verts:
         lines.append("    (%.12f %.12f %.12f)\n" % v)
     lines.append(");\n\nblocks\n(\n")
-    lines.append("    hex (0 3 5 2 0 3 4 1) (%d %d 1) simpleGrading (%.5f %.5f 1)\n"
-                 % (n_ax1, n_r_core, gx1, gr_core))
-    lines.append("    hex (3 6 8 5 3 6 7 4) (%d %d 1) simpleGrading (%s %.5f 1)\n"
-                 % (n_ax2, n_r_core, gx2, gr_core))
-    lines.append("    hex (6 9 11 8 6 9 10 7) (%d %d 1) simpleGrading (%.5f %.5f 1)\n"
-                 % (n_ax3, n_r_core, gx3, gr_core))
-    lines.append("    hex (5 8 15 13 4 7 14 12) (%d %d 1) simpleGrading (%s %s 1)\n"
-                 % (n_ax2, n_r_ann, gx2, gr_ann))
+    patches = {name: [] for name in ("inlet", "outlet", "upperWall", "back", "front", "axis")}
+
+    def face(name, vertices):
+        patches[name].append("(" + " ".join(map(str, vertices)) + ")")
+
+    def block(v, count, radial_left, radial_right, axial):
+        grading = [axial]*4 + [radial_left, radial_right, radial_right, radial_left] + ["1"]*4
+        lines.append("    hex (%s) (%d %d 1) edgeGrading (%s)\n"
+                     % (" ".join(map(str, v)), count[0], count[1], " ".join(grading)))
+        face("back", [v[j] for j in (0, 3, 2, 1)])
+        face("front", [v[j] for j in (4, 5, 6, 7)])
+
+    for i in range(5):
+        a, b = 3*i, 3*(i+1)
+        block([a,b,b+2,a+2,a,b,b+1,a+1], (nx[i],n_r_core), core[i],core[i+1],gx[i])
+        face("axis", [a,b,b,a])
+        if i in (0,4):
+            face("upperWall", [a+1,b+1,b+2,a+2])
+    for i in range(1,4):
+        a, b, oa, ob = 3*i, 3*(i+1), outer[i], outer[i+1]
+        block([a+2,b+2,ob+1,oa+1,a+1,b+1,ob,oa],
+              (nx[i],n_r_ann), ann[i],ann[i+1],gx[i])
+        face("upperWall", [oa,ob,ob+1,oa+1])
+    face("inlet", [0,1,2,0])
+    face("outlet", [15,17,16,15])
+    face("upperWall", [4,outer[1],outer[1]+1,5])
+    face("upperWall", [13,14,outer[4]+1,outer[4]])
     lines.append(");\n\nedges\n(\n")
-    for i, x in enumerate(xs):
-        lines.append("    arc %d %d (%.12f %.12f 0)\n" % (3 * i + 1, 3 * i + 2, x, r1))
-    lines.append("    arc 12 13 (%.12f %.12f 0)\n" % (x_exp, r2))
-    lines.append("    arc 14 15 (%.12f %.12f 0)\n" % (x_con, r2))
-    lines.append(""");
-
-boundary
-(
-    inlet
-    {
-        type patch;
-        faces ( (0 1 2 0) );
-    }
-    outlet
-    {
-        type patch;
-        faces ( (9 11 10 9) );
-    }
-    upperWall
-    {
-        type wall;
-        faces
-        (
-            (1 4 5 2)
-            (4 12 13 5)
-            (12 14 15 13)
-            (7 8 15 14)
-            (7 10 11 8)
-        );
-    }
-    back
-    {
-        type wedge;
-        faces ( (0 2 5 3) (3 5 8 6) (6 8 11 9) (5 13 15 8) );
-    }
-    front
-    {
-        type wedge;
-        faces ( (0 3 4 1) (3 6 7 4) (6 9 10 7) (4 7 14 12) );
-    }
-    axis
-    {
-        type empty;
-        faces ( (0 3 3 0) (3 6 6 3) (6 9 9 6) );
-    }
-);
-
-mergePatchPairs
-(
-);
-
-// ************************************************************************* //
-""")
+    for i,x in enumerate(xs):
+        lines.append("    arc %d %d (%.12f %.12f 0)\n" % (3*i+1,3*i+2,x,r1))
+    for i,o in outer.items():
+        lines.append("    arc %d %d (%.12f %.12f 0)\n" % (o,o+1,xs[i],r2))
+    lines.append(");\n\nboundary\n(\n")
+    for name, faces in patches.items():
+        kind = {"inlet":"patch", "outlet":"patch", "upperWall":"wall",
+                "back":"wedge", "front":"wedge", "axis":"empty"}[name]
+        lines.append("    %s\n    {\n        type %s;\n        faces (%s);\n    }\n"
+                     % (name,kind," ".join(faces)))
+    lines.append(");\n\nmergePatchPairs ();\n")
     with open(path, "w") as fh:
         fh.writelines(lines)
-    return (n_ax1 + n_ax2 + n_ax3) * n_r_core + n_ax2 * n_r_ann
+    return sum(nx)*n_r_core + n_ax2*n_r_ann
 
 
 # ----------------------------------------------------------------------------
 # 8. THE THREE MESHES  (systematic refinement, r = 1.5 in every direction)
 # ----------------------------------------------------------------------------
 REF = 1.5
-BASE = dict(n_ax1=200, n_ax2=250, n_ax3=200, n_r_core=40, n_r_ann=40,
-            dx_fine=0.002, dr_wall1=dw1 / REF, dr_wall2=dw2 / REF)
+BASE = dict(n_ax1=160, n_ax2=340, n_ax3=160, n_r_core=32, n_r_ann=40,
+            dx_fine=0.003, dr_wall1=dw1, dr_wall2=dw2)
 
 levels = []
-# The former medium resolution is now fine; retain the same refinement factor.
-for name, p in [("coarse", 1.0 / REF**2), ("medium", 1.0 / REF), ("fine", 1.0)]:
+# Coarse targets y+ = 1; scale counts and all prescribed small spacings together.
+for name, p in [("coarse", 1.0), ("medium", REF), ("fine", REF**2)]:
     cfg = dict(
         n_ax1=int(round(BASE["n_ax1"] * p)),
         n_ax2=int(round(BASE["n_ax2"] * p)),
@@ -391,7 +411,7 @@ rep.append(f"  u_tau2                  = {u_tau2:.5f} m/s")
 rep.append(f"  y(y+=1), small pipe     = {y_c1:.3e} m -> first cell height {dw1:.3e} m")
 rep.append(f"  y(y+=1), large pipe     = {y_c2:.3e} m -> first cell height {dw2:.3e} m")
 rep.append("  NOTE: with a low-Re model the first cell must stay in the viscous sublayer")
-rep.append("        on ALL three meshes. The coarser family targets y+ = 1.50 -> 1.00 -> 0.67,")
+rep.append("        on ALL three meshes. This family targets y+ = 1.00 -> 0.67 -> 0.44,")
 rep.append("        which is still valid. With wall functions the same refinement would")
 rep.append("        walk out of the 30 < y+ < 300 band, which is why the GCI study forces")
 rep.append("        the low-Re / resolved-boundary-layer choice.")

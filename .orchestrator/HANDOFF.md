@@ -1,11 +1,9 @@
 # Current state
 
-R1–R4 implemented and verified for mesh quality and parallel workflow; evidence in VERIFICATION.md. Production simulations were not rerun. Existing user modifications and data retained.
+M1–M3 complete: revised mesh family targets nominal developed-wall y+ 1 / 0.667 / 0.444 with 34,720 / 78,120 / 175,770 cells. User superseded the former coarser family. Generator adds two axial planes 20h from the steps, relaxes internal radial spacing, retains outer-wall spacing, and matches sizes across interfaces and grading joins. README explains helpers and rerun requirements.
 
-New family 7200/16033/36000 cells, old medium becomes fine, uniform middle axial segment lowers max aspect ratios below500. Allrun renumbers -overwrite, maps prior level, decomposes into8, runs MPI, requires strict SIMPLE or grouped component convergence, reconstructs latest accepted time and exports.
+Actual isolated meshes pass standard checkMesh and renumberMesh -overwrite. Max aspect ~333, nonorthogonality <0.81 degrees, skewness .332. Coarse max radial growth15.8%, axial2.8%. Optional allGeometry determinant check still fails, also reproduced on previous coarse; see VERIFICATION.md. Production solver runs, postprocess/data and plots were not modified this turn. Improved minor-loss predictions not established.
 
-Cap100000; runTimeControl component residual limits p1e-3,Ux/Uy2e-4,Uz.02,k/epsilon5e-5. All conditions ANDed in group1. Saved old coarse Uz max1.3e-13 m/s supports normalized residual relaxation; physical convergence still needs production evaluation.
+Relevant code: case_design/case_design.py plus generated dictionaries, case_params.json and design_summary.txt. Prior uncommitted Allpostprocess/baseline plotting changes retained. OpenFOAM v2412 environment /usr/lib/openfoam/openfoam2412/etc/bashrc. Mesh verification artifacts /tmp/physics-mesh-46zuikzd, spacing script /tmp/check_mesh_spacing.py, comparison plot inspected.
 
-Temporary test /tmp/gci-parallel-check-lz4r2hux passed all-level MPI workflow with loose test-only thresholds. Negative Ux threshold test rejected cap termination without modifying exports. Existing coarse/medium logs reached10000 without native convergence; previous map source10000, not1000. Production fine log was incomplete during inspection; left untouched.
-
-Next user action: run ./Allrun.sh for new meshes before any GCI evaluation; cell-count metadata now describes new family. OpenFOAM /usr/lib/openfoam/openfoam2412/etc/bashrc; MPI tests require local sockets unavailable in default sandbox. No outstanding implementation tasks.
+Next user action: run all three levels with ./Allrun.sh before interpreting new GCI, since metadata now describes the revised family. Eight-process run, convergence checks, mapping, renumber -overwrite, full postprocessing suite retained. No outstanding implementation work.
