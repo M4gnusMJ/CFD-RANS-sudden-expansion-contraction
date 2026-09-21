@@ -1,0 +1,34 @@
+Group 22 - post-processing
+====================================================
+parameters: d1=0.1 d2=0.2 Re1=20000.0 steps at x=3.0 and x=12.0  (case_params.json)
+analytical curve: 2001 points loaded
+
+coarse:
+  dp/rho across expansion   = +0.78961 m2/s2   (analytical +0.75000)
+  dp/rho across contraction = -3.04741 m2/s2   (analytical -2.62500)
+  fit windows, expansion    1.80-2.69 m  and  4.00-11.40 m
+  fit windows, contraction  4.00-11.40 m  and  13.01-14.70 m
+  f1 from measured slope    = 0.03111        (Haaland 0.02575)
+  y+ range                  = 0.039 .. 19.512   (must stay <~ 1)
+
+medium:
+  dp/rho across expansion   = +0.79093 m2/s2   (analytical +0.75000)
+  dp/rho across contraction = -3.08943 m2/s2   (analytical -2.62500)
+  fit windows, expansion    1.80-2.69 m  and  4.00-11.40 m
+  fit windows, contraction  4.00-11.40 m  and  13.01-14.70 m
+  f1 from measured slope    = 0.02773        (Haaland 0.02575)
+  y+ range                  = 0.007 .. 16.499   (must stay <~ 1)
+
+fine:
+  dp/rho across expansion   = +0.77905 m2/s2   (analytical +0.75000)
+  dp/rho across contraction = -3.07071 m2/s2   (analytical -2.62500)
+  fit windows, expansion    1.80-2.69 m  and  4.00-11.40 m
+  fit windows, contraction  4.00-11.40 m  and  13.01-14.70 m
+  f1 from measured slope    = 0.02660        (Haaland 0.02575)
+  y+ range                  = 0.006 .. 13.967   (must stay <~ 1)
+
+All three levels present -> feed these into gci.py:
+  contraction: fine=-3.07071, medium=-3.08943, coarse=-3.04741
+  expansion:   fine=0.77905, medium=0.79093, coarse=0.78961
+
+Wrote pressure_comparison.png

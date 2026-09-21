@@ -22,7 +22,7 @@ Plain Python, outside the container:
 python3 case_design/case_design.py
 ```
 
-Writes `blockMeshDict.coarse/.medium/.fine` (16k / 36k / 81k cells),
+Writes `blockMeshDict.coarse/.medium/.fine` (7,200 / 16,033 / 36,000 cells),
 `design_summary.txt` with every parameter and where it comes from,
 `analytical_pressure.csv/.png`, `case_params.json`, and
 `base_case/0/include/initialConditions` (inlet U, k, epsilon, omega).
@@ -49,17 +49,39 @@ For each level `Allrun.sh`:
 1. copies `base_case/` to `run_<level>/`, so the three results coexist —
    the GCI study needs all three at once,
 2. drops `case_design/blockMeshDict.<level>` into `run_<level>/system/`,
-3. runs `blockMesh`, `checkMesh` and `simpleFoam`, each logged to
-   `run_<level>/log.<step>`,
-4. prints the checkMesh summary (cell count, aspect ratio, non-orthogonality,
+3. runs `blockMesh`, `renumberMesh -overwrite` and `checkMesh`, then maps
+   the latest saved coarse solution onto medium, or medium onto fine (when
+   available with matching geometry),
+4. runs `decomposePar`, `mpirun -np 8 simpleFoam -parallel`, and
+   `reconstructPar -latestTime`; each step is logged to `run_<level>/log.<step>`,
+5. prints the checkMesh summary (cell count, aspect ratio, non-orthogonality,
    skewness) and the solver's own y+ min/max/avg,
-5. writes `postprocess/data/<level>_axis.csv` (x, p along the axis) and
+6. writes `postprocess/data/<level>_axis.csv` (x, p along the axis) and
    `<level>_yplus.csv` (x, y+ per wall face).
 
 If a step fails it stops there and prints the last 25 lines of that log, so
 the error is on screen; the full log stays in `run_<level>/`.
 
-Rough wall-clock on a laptop: coarse ~10 min, medium ~40 min, fine ~1.5 h.
+The current medium resolution became the new fine level. Refinement remains
+approximately 1.5 in the axial and radial directions. The expanded section now
+uses graded ends and a uniform central segment to limit axial stretching;
+checked maximum aspect ratios are approximately 467 / 468 / 472. Rerun all three
+levels before using GCI with the new cell counts.
+
+The iteration cap is 100,000. Reaching it without convergence makes `Allrun.sh`
+fail before reconstruction/export or advancing to the next level. Existing
+exported CSVs are not refreshed on failure. The component-wise criteria in
+`base_case/system/convergence_controls` require all initial residuals to pass
+in the same iteration: p < 1e-3, Ux and Uy < 2e-4, Uz < 0.02, and k and epsilon
+< 5e-5. The relaxed Uz threshold concerns its normalized residual, not the
+physical velocity. The standard stricter whole-vector SIMPLE criterion is
+also retained. The convergence function writes the final fields before stopping,
+so mapping uses that saved iteration rather than a fixed iteration number.
+
+Eight MPI processes are configured in `base_case/system/decomposeParDict`
+and the Allrun command. MPI must be installed and eight CPU slots available.
+Runtime savings depend on the machine and mesh; no new runtime benchmark has
+been performed.
 
 ### Where the results end up
 
@@ -148,7 +170,10 @@ alternate directories.
 steps and exports local wall shear and wall-cell y+. D is the upstream diameter:
 the requested 3D stations are x=2.7 m (expansion) and x=8.4 m (contraction).
 `sample_wall_profiles.py --generate` builds the sampling include from
-`case_params.json`; `Allrun.sh` runs this before copying the cases.
+`case_params.json`; `Allrun.sh` runs this before copying the cases. The same generator writes
+`base_case/system/axis_sampling`, shared by the final pressure line and pressure
+history. Both extend to `Ltot` (currently 15 m); existing exported CSVs need
+resampling or a new run to include an extended domain.
 
 Existing saved solutions can be sampled without rerunning the solver. In a shell
 where OpenFOAM v2412 is loaded, run:
@@ -174,12 +199,15 @@ All subsequent numerical analysis reads only these exported files:
 python3 postprocess/velocity_profiles.py
 ```
 
-Outputs are `figs/upstream_velocity_profiles.png` (three-mesh velocity,
-u+ versus y+, and turbulent-viscosity profiles),
-`figs/upstream_velocity_development.png` (4D/3D/2D comparisons), and
+Outputs are `figs/upstream_velocity_profiles.png` (wall-scaled axial velocity
+at the two 3D stations, with overlapping viscous and log reference lines),
+`figs/upstream_velocity_development.png` (the same u+ versus y+ comparison at
+2D, 3D and 4D upstream, with a panel for each step and mesh), and
 `tables/upstream_wall_summary.csv`, `tables/upstream_development.csv` and
 `tables/upstream_scaled_profiles.csv`, all under `postprocess/`.
 Options `--data-dir`, `--output-dir`, `--figures-dir` and `--no-plot` work as for GCI.
+Each station uses its own local wall shear for scaling. Both figures share
+reference lines and formatting, with no bottom annotation.
 
 Wall scaling uses `u_tau = sqrt(abs(tau_wall_x/rho))`, `u+ = Ux/u_tau` and
 `y+ = distance_from_wall*u_tau/nu`. The wall shear is sampled directly on the
@@ -194,7 +222,7 @@ closer to the wall than the locally reported first-cell y+; the full exported
 table retains them with a `below_first_cell` flag.
 
 The sublayer metric compares u+ with y+ between the first cell and y+=5.
-The log-region diagnostic compares with `ln(y+)/0.41 + 5` only where y+>=30
+The log-region diagnostic compares with `ln(y+)/0.41 + 5.2` only where y+>=30
 and wall distance/R<=0.2; the plotted log reference extends farther for context,
 but is not expected to describe the pipe core. Empty diagnostic ranges produce
 blank metrics and zero sample counts. The streamwise comparison reports

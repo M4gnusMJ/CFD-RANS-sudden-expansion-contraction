@@ -53,9 +53,9 @@ def profile_change(target, neighbour):
     return 100 * rms, 100 * np.max(np.abs(change))
 
 
-def analyse(data_dir):
+def analyse(data_dir, levels=LEVELS):
     profiles, summary, changes = {}, [], []
-    for level in LEVELS:
+    for level in levels:
         meta = json.loads((data_dir / f"{level}_wall_metadata.json").read_text())
         samples = pd.read_csv(data_dir / f"{level}_velocity_profiles.csv")
         walls = pd.read_csv(data_dir / f"{level}_wall_diagnostics.csv")
@@ -117,7 +117,7 @@ def style_wall_axes(ax, max_yplus, title):
     ax.legend(fontsize=8, frameon=False, loc="upper left")
 
 
-def plot(profiles, summary, figures_dir):
+def plot(profiles, summary, figures_dir, levels=LEVELS):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -126,11 +126,11 @@ def plot(profiles, summary, figures_dir):
     for row, step in enumerate(("expansion", "contraction")):
         ax = axes[row]
         name = f"{step}_3D"
-        for level in LEVELS:
+        for level in levels:
             p = profiles[level, name]
             wall_yplus = summary[(summary.mesh == level) & (summary.station == name)].wall_cell_yplus.iloc[0]
             plot_wall_curve(ax, p, f"{level} (wall cell y+={wall_yplus:.2f})", COLORS[level])
-        max_log = max(profiles[level, name].yplus.max() for level in LEVELS)
+        max_log = max(profiles[level, name].yplus.max() for level in levels)
         x = summary[summary.station == name]["x [m]"].iloc[0]
         style_wall_axes(ax, max_log, f"3D before {step}: x = {x:g} m")
     fig.suptitle("Wall-scaled axial velocity")
@@ -138,9 +138,10 @@ def plot(profiles, summary, figures_dir):
     fig.savefig(figures_dir / "upstream_velocity_profiles.png", dpi=160)
     plt.close(fig)
 
-    fig, axes = plt.subplots(3, 2, figsize=(12, 13), sharey=True)
+    fig, axes = plt.subplots(len(levels), 2, figsize=(12, 4 * len(levels) + 1),
+                              sharey=True, squeeze=False)
     station_colors = {2: "#d6604d", 3: "#e69f00", 4: "#2166ac"}
-    for row, level in enumerate(LEVELS):
+    for row, level in enumerate(levels):
         for col, step in enumerate(("expansion", "contraction")):
             ax = axes[row, col]
             max_yplus = 0
@@ -166,10 +167,12 @@ def main():
     parser.add_argument("--data-dir", type=Path, default=HERE / "data")
     parser.add_argument("--output-dir", type=Path, default=HERE / "tables")
     parser.add_argument("--figures-dir", type=Path, default=HERE / "figs")
+    parser.add_argument("--levels", nargs="+", choices=LEVELS, default=LEVELS,
+                        help="Mesh levels to process (default: all three)")
     parser.add_argument("--no-plot", action="store_true")
     args = parser.parse_args()
     try:
-        profiles, summary, changes = analyse(args.data_dir)
+        profiles, summary, changes = analyse(args.data_dir, args.levels)
         args.output_dir.mkdir(parents=True, exist_ok=True)
         summary.to_csv(args.output_dir / "upstream_wall_summary.csv", index=False)
         changes.to_csv(args.output_dir / "upstream_development.csv", index=False)
@@ -179,7 +182,7 @@ def main():
         print(changes.to_string(index=False))
         if not args.no_plot:
             args.figures_dir.mkdir(parents=True, exist_ok=True)
-            plot(profiles, summary, args.figures_dir)
+            plot(profiles, summary, args.figures_dir, args.levels)
         print(f"Tables: {args.output_dir}\nFigures: {args.figures_dir}")
     except (OSError, ValueError, KeyError) as exc:
         parser.exit(1, f"Velocity diagnostics failed: {exc}\n"

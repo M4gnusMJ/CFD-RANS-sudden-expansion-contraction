@@ -16,9 +16,9 @@ Entrance lengths -> section lengths
   Le2 = 4.4 Re2^(1/6) d2  = 4.085 m   (20.4 d2)
   reattachment ~ 10 h     = 0.500 m
   L1 (inlet pipe)         = 3.000 m   (30.0 d1)
-  L2 (expansion pipe)     = 6.000 m   (30.0 d2)
+  L2 (expansion pipe)     = 9.000 m   (45.0 d2)
   L3 (outlet pipe)        = 3.000 m   (30.0 d1)
-  total length            = 12.000 m   expansion at x = 3.000 m, contraction at x = 9.000 m
+  total length            = 15.000 m   expansion at x = 3.000 m, contraction at x = 12.000 m
 
 Friction, wall units, first cell
 --------------------------------
@@ -29,7 +29,7 @@ Friction, wall units, first cell
   y(y+=1), small pipe     = 8.813e-05 m -> first cell height 1.763e-04 m
   y(y+=1), large pipe     = 3.219e-04 m -> first cell height 6.438e-04 m
   NOTE: with a low-Re model the first cell must stay in the viscous sublayer
-        on ALL three meshes. Anchoring y+=1 on the COARSEST mesh, refining by 1.5 gives 1.00 -> 0.67 -> 0.44,
+        on ALL three meshes. The coarser family targets y+ = 1.50 -> 1.00 -> 0.67,
         which is still valid. With wall functions the same refinement would
         walk out of the 30 < y+ < 300 band, which is why the GCI study forces
         the low-Re / resolved-boundary-layer choice.
@@ -53,13 +53,13 @@ Minor losses (Cengel & Cimbala Table 8-4)
   d(p/rho)/dx, large pipe          = -0.01930 m/s2
   jump at expansion   D(p/rho)     = +0.75000 m2/s2  (pressure RISES)
   jump at contraction D(p/rho)     = -2.62500 m2/s2  (pressure DROPS)
-  total D(p/rho) inlet->outlet     = +5.08067 m2/s2
+  total D(p/rho) inlet->outlet     = +5.13858 m2/s2
 
 Meshes (systematic refinement r = 1.5)
 --------------------------------------
   level    cells    n_ax1 n_ax2 n_ax3 n_r  n_ann   y+_wall(small pipe)
-  coarse   16033    133   167   133   27   26     1.000
-  medium   36000    200   250   200   40   40     0.667
-  fine     81000    300   375   300   60   60     0.444
+  coarse   7200     89    111   89    18   18     1.500
+  medium   16033    133   167   133   27   26     1.000
+  fine     36000    200   250   200   40   40     0.667
   -> blockMeshDict.coarse / .medium / .fine written next to this script.
   -> run checkMesh on each; max non-orthogonality and skewness must pass.

@@ -19,18 +19,7 @@ axisLine
     setFormat       csv;
     fields          (p U k epsilon);
 
-    sets
-    (
-        line
-        {
-            type    uniform;
-            axis    x;
-            // just off the axis: exactly on it the wedge is degenerate
-            start   (0.0    0.0002 0);
-            end     (12.0   0.0002 0);
-            nPoints 1200;
-        }
-    );
+    #include "axis_sampling"
 }
 
 // ---- 2. the same line every 500 iterations ---------------------------------
@@ -46,17 +35,7 @@ axisHistory
     setFormat       csv;
     fields          (p);
 
-    sets
-    (
-        line
-        {
-            type    uniform;
-            axis    x;
-            start   (0.0    0.0002 0);
-            end     (12.0   0.0002 0);
-            nPoints 1200;
-        }
-    );
+    #include "axis_sampling"
 }
 
 // ---- 3. y+ summary (min / max / average per patch) -------------------------
@@ -95,7 +74,7 @@ yPlusSurface
 
 // ---- 5. wall-normal profiles for the law of the wall -----------------------
 // Plot u+ vs y+ from these and compare with u+ = y+ in the viscous sublayer
-// and u+ = ln(y+)/0.41 + 5.0 in the log layer.
+// and u+ = ln(y+)/0.41 + 5.2 in the log layer.
 wallProfiles
 {
     type            sets;
@@ -157,5 +136,8 @@ residuals
     writeInterval   1;
     fields          (p U k epsilon);
 }
+
+// Component-wise convergence checks, after sampling and residual reporting.
+#include "convergence_controls"
 
 // ************************************************************************* //
